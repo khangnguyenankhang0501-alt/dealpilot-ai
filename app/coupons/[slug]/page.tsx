@@ -1,6 +1,6 @@
 import Breadcrumb from "@/components/Breadcrumb";
 import CopyButton from "@/components/CopyButton";
-import { supabase } from "@/lib/supabaseClientClientClient";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 export async function generateMetadata({

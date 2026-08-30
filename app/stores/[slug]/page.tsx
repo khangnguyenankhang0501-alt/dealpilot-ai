@@ -1,5 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import { supabase } from "@/lib/supabaseClientClientClient";
+import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 export async function generateMetadata({

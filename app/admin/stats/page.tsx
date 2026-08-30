@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClientClientClient";
+import { supabase } from "@/lib/supabaseClient";
 
 // Vô hiệu hóa cache để dữ liệu luôn được cập nhật mới nhất
 export const revalidate = 0;

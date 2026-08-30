@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClientClientClient";
+import { supabase } from "@/lib/supabaseClient";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 
