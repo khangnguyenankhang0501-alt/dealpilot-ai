@@ -8,9 +8,6 @@ const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8labDAkRCpsNr5Sg0Ncs7xjqz6bfsOpCgmk";
 export const metadata: Metadata = {
   title: "DealPilot - Best Coupon Codes & Deals",
   description: "Find the best coupon codes, promo codes, and daily deals.",
-  verification: {
-    google: GOOGLE_VERIFICATION_CODE,
-  },
 };
 
 export default function RootLayout({
