@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase-temp";
+import { supabase } from "@/lib/supabase";
 
 type SearchResult = {
   title: string;

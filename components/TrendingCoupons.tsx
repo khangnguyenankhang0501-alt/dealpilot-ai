@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase-temp";
+import { supabase } from "@/lib/supabase";
 
 export default async function TrendingCoupons() {
   const { data: coupons } = await supabase.from("coupons").select("*").limit(6);

@@ -1,7 +1,7 @@
 import FeaturedCoupons from "@/components/FeaturedCoupons";
 import PopularCoupons from "@/components/PopularCoupons";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase-temp";
+import { supabase } from "@/lib/supabase";
 import { Metadata } from "next";
 
 // 1. Thêm Metadata cho Trang Chủ (Static Page)
