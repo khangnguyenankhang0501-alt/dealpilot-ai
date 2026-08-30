@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClientClient";
 import GetDealButton from "@/components/GetDealButton";
 
 export const revalidate = 0;

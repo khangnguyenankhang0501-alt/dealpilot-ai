@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClientClient";
 
 export default async function SearchPage({
   searchParams,

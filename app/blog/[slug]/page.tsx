@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabaseClientClient";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
