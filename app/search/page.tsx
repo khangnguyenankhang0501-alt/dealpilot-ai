@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase-temp";
+import { supabase } from "@/lib/supabase";
 
 export default async function SearchPage({
   searchParams,
