@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { supabase } from "@/lib/supabaseClientClient";
+import { supabase } from "@/lib/supabaseClientClientClient";
 
 const SITE_URL = "https://dealpilot.com";
 

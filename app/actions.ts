@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabaseClientClient";
+import { supabase } from "@/lib/supabaseClientClientClient";
 import { revalidatePath } from "next/cache";
 
 export async function trackClick(couponId: string | number) {

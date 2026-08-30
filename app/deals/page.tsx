@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClientClient";
+import { supabase } from "@/lib/supabaseClientClientClient";
 import { Metadata } from "next";
 import GetDealButton from "@/components/GetDealButton";
 
