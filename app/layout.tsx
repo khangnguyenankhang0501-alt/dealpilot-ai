@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
-// Đoạn mã bí mật xác thực từ ảnh lỗi của bạn:
-const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8labDAkRCpsNr5Sg0Ncs7xjqz6bfsOpCgmk";
+const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8lAbDAkRCpsNr55g0Ncs7xjqZ6bfsOpCgmk";
 
 export const metadata: Metadata = {
   title: "DealPilot - Best Coupon Codes & Deals",
@@ -23,6 +23,11 @@ export default function RootLayout({
 
         {/* Nội dung các trang con */}
         {children}
+
+        {/* Google Analytics 4 Tracking */}
+        <GoogleAnalytics
+          gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""}
+        />
       </body>
     </html>
   );
