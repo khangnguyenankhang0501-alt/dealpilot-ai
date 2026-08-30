@@ -1,6 +1,10 @@
-import SearchBar from "./SearchBar";
+import SearchBox from "./SearchBox";
 
-export default function Hero() {
+interface HeroProps {
+  coupons?: any[];
+}
+
+export default function Hero({ coupons = [] }: HeroProps) {
   return (
     <section className="py-24 text-center">
       <h1 className="text-6xl font-bold text-slate-900">
@@ -12,7 +16,7 @@ export default function Hero() {
         stores.
       </p>
 
-      <SearchBar />
+      <SearchBox coupons={coupons} />
     </section>
   );
 }

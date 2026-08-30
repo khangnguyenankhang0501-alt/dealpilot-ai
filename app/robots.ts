@@ -1,9 +1,16 @@
-export default function robots() {
+import type { MetadataRoute } from "next";
+
+const SITE_URL = "https://dealpilot.com";
+
+export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
-    sitemap: "https://yourdomain.com/sitemap.xml",
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+      },
+    ],
+
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
