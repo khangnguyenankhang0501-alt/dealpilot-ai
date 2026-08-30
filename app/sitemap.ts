@@ -1,15 +1,13 @@
 import type { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabaseClient";
 
-const SITE_URL = "https://dealpilot.com";
+const SITE_URL = "https://dealpilot-ai-iota.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ data: coupons }, { data: stores }, { data: categories }] =
     await Promise.all([
       supabase.from("coupons").select("slug, created_at"),
-
       supabase.from("stores").select("slug, created_at"),
-
       supabase.from("categories").select("slug, created_at"),
     ]);
 
