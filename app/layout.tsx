@@ -3,7 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 
 // Đoạn mã bí mật xác thực từ ảnh lỗi của bạn:
-const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8labDAkRCpsNr5Sg0Ncs7xjqz6bfs0pCgmk";
+const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8labDAkRCpsNr5Sg0Ncs7xjqz6bfsOpCgmk";
 
 export const metadata: Metadata = {
   title: "DealPilot - Best Coupon Codes & Deals",
