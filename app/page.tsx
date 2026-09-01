@@ -15,7 +15,7 @@ export const revalidate = 0;
 export default async function HomePage() {
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: coupons } = await supabase
+  const { data: coupons, error } = await supabase
     .from("coupons")
     .select(
       `
@@ -29,8 +29,13 @@ export default async function HomePage() {
     `,
     )
     .eq("status", "Active")
-    .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .or(`expires_at.is.null,expires_at.gte."${today}"`)
+    .order("created_at", { ascending: false })
     .limit(10);
+
+  if (error) {
+    console.error("Error fetching coupons:", error);
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
