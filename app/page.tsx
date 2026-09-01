@@ -19,7 +19,7 @@ export default async function HomePage() {
     .select(
       `
       *,
-      stores!store_id (
+      stores!coupons_store_id_fkey (
         id,
         name,
         slug,
