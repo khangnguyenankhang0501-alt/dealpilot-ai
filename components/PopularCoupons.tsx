@@ -8,16 +8,30 @@ export default async function PopularCoupons() {
   const today = new Date().toISOString().split("T")[0];
 
   // Lấy các coupon Active và chưa hết hạn
-  const { data: coupons } = await supabase
+  const { data: coupons, error } = await supabase
     .from("coupons")
-    .select("*")
+    .select(
+      `
+      *,
+      stores!store_id (
+        id,
+        name,
+        slug,
+        logo_url
+      )
+    `,
+    )
     .eq("status", "Active")
-    .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .or(`expires_at.is.null,expires_at.gte."${today}"`)
     .order("click_count", {
       ascending: false,
       nullsFirst: false,
     })
-    .limit(2);
+    .limit(10); // Đã tăng limit lên 10 để hiện nhiều sản phẩm trên thanh trượt
+
+  if (error) {
+    console.error("Error fetching popular coupons:", error);
+  }
 
   // Không có coupon thì không hiển thị section
   if (!coupons || coupons.length === 0) {
@@ -36,10 +50,15 @@ export default async function PopularCoupons() {
         <span className="text-sm text-gray-500">Based on clicks</span>
       </div>
 
-      {/* POPULAR COUPONS */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      {/* POPULAR COUPONS SLIDER */}
+      <div className="flex w-full gap-5 overflow-x-auto pb-6 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
         {coupons.map((coupon) => (
-          <CouponCard key={coupon.id} coupon={coupon} />
+          <div
+            key={coupon.id}
+            className="min-w-[300px] sm:min-w-[340px] shrink-0 snap-start"
+          >
+            <CouponCard coupon={coupon} />
+          </div>
         ))}
       </div>
     </section>
