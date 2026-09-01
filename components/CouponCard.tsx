@@ -126,22 +126,30 @@ export default function CouponCard({
         </div>
 
         <div>
-          {/* CTA */}
+          {/* CTA - Đã cố định bố cục gọn gàng, nút Get Code luôn chuẩn đẹp */}
           <div className="mt-4 flex w-full items-center gap-2">
-            {hasCode && (
-              <div className="flex min-w-0 flex-1 items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 py-2.5 text-xs font-bold tracking-wider text-green-700">
-                <span className="truncate">
-                  {coupon.coupon_code!.slice(0, 4)}••••
-                </span>
+            {hasCode ? (
+              <>
+                <div className="flex h-10 min-w-0 flex-1 items-center justify-center rounded-lg border border-green-300 bg-green-50 px-2 text-xs font-bold tracking-wider text-green-700">
+                  <span className="truncate">
+                    {coupon.coupon_code!.slice(0, 4)}••••
+                  </span>
+                </div>
+                <div className="shrink-0 w-auto">
+                  <CouponLinkButton
+                    couponSlug={coupon.slug}
+                    couponCode={coupon.coupon_code}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="w-full">
+                <CouponLinkButton
+                  couponSlug={coupon.slug}
+                  couponCode={coupon.coupon_code}
+                />
               </div>
             )}
-
-            <div className={hasCode ? "shrink-0 w-full" : "w-full"}>
-              <CouponLinkButton
-                couponSlug={coupon.slug}
-                couponCode={coupon.coupon_code}
-              />
-            </div>
           </div>
 
           {/* TRUST / DETAILS */}
