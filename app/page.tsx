@@ -1,4 +1,3 @@
-import FeaturedCoupons from "@/components/FeaturedCoupons";
 import PopularCoupons from "@/components/PopularCoupons";
 import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
@@ -29,7 +28,7 @@ export default async function HomePage() {
     `,
     )
     .eq("status", "Active")
-    .or(`expires_at.is.null,expires_at.gte."${today}"`)
+    .or(`expires_at.is.null,expires_at.gte.${today}`)
     .order("created_at", { ascending: false })
     .limit(10);
 
