@@ -39,8 +39,6 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <FeaturedCoupons />
-
       <PopularCoupons />
 
       <h1 className="mt-12 mb-8 text-4xl font-bold">Latest Coupons</h1>
