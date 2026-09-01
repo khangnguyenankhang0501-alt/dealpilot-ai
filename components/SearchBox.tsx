@@ -1,42 +1,104 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
-export default function SearchBox({ coupons }: { coupons: any[] }) {
+type SearchResult = {
+  id: string;
+  title: string | null;
+  slug: string | null;
+  store_name: string | null;
+  coupon_code: string | null;
+};
+
+export default function SearchBox() {
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const suggestions = coupons.filter(
-    (coupon) =>
-      coupon.title?.toLowerCase().includes(query.toLowerCase()) ||
-      coupon.store_name?.toLowerCase().includes(query.toLowerCase()),
-  );
+  useEffect(() => {
+    const search = query.trim();
+
+    if (!search) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+
+      try {
+        const today = new Date().toISOString().split("T")[0];
+
+        const { data, error } = await supabase
+          .from("coupons")
+          .select("id, title, slug, store_name, coupon_code")
+          .eq("status", "Active")
+          .or(`expires_at.is.null,expires_at.gte.${today}`)
+          .or(
+            `title.ilike.%${search}%,store_name.ilike.%${search}%,coupon_code.ilike.%${search}%`,
+          )
+          .limit(5);
+
+        if (error) {
+          console.error("Search error:", error);
+          setResults([]);
+          return;
+        }
+
+        setResults(data ?? []);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const hasQuery = query.trim().length > 0;
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-6 w-full">
       <input
         type="text"
         placeholder="Search coupons..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="border p-3 w-full rounded"
+        className="w-full rounded-lg border p-3 outline-none focus:border-black"
       />
 
-      {query && (
-        <div className="absolute bg-white border w-full mt-1 rounded shadow-lg z-50">
-          {suggestions.slice(0, 5).map((coupon) => (
-            <Link
-              key={coupon.id}
-              href={`/coupon/${coupon.slug}`}
-              className="block px-4 py-3 hover:bg-gray-100"
-            >
-              <div className="font-semibold">{coupon.title}</div>
+      {hasQuery && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border bg-white shadow-lg">
+          {loading && (
+            <div className="px-4 py-3 text-gray-500">Searching...</div>
+          )}
 
-              <div className="text-sm text-gray-500">{coupon.store_name}</div>
-            </Link>
-          ))}
+          {!loading &&
+            results.length > 0 &&
+            results.map((item) => (
+              <Link
+                key={item.id}
+                href={item.slug ? `/coupons/${item.slug}` : "#"}
+                onClick={() => {
+                  setQuery("");
+                  setResults([]);
+                }}
+                className="block border-b px-4 py-3 hover:bg-gray-100 last:border-b-0"
+              >
+                <div className="font-semibold">{item.title}</div>
+                <div className="text-sm text-gray-500">{item.store_name}</div>
 
-          {suggestions.length === 0 && (
+                {item.coupon_code && (
+                  <div className="mt-1 text-xs font-semibold text-green-600">
+                    Code: {item.coupon_code}
+                  </div>
+                )}
+              </Link>
+            ))}
+
+          {!loading && results.length === 0 && (
             <div className="px-4 py-3 text-gray-500">No results</div>
           )}
         </div>

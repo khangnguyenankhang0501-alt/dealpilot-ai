@@ -1,22 +1,22 @@
-import SearchBox from "./SearchBox";
+"use client";
 
-interface HeroProps {
-  coupons?: any[];
-}
+import SearchBox from "@/components/SearchBox";
 
-export default function Hero({ coupons = [] }: HeroProps) {
+export default function Hero() {
   return (
-    <section className="py-24 text-center">
-      <h1 className="text-6xl font-bold text-slate-900">
-        Find The Best Coupons & Deals
+    <section className="py-16 text-center">
+      <h1 className="text-5xl font-bold text-slate-900">
+        Find the Best Coupons & Deals
       </h1>
 
-      <p className="mt-6 text-lg text-slate-500">
-        Verified promo codes, cashback offers and exclusive discounts from top
-        stores.
+      <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-500">
+        Discover verified coupon codes, promo codes, and great deals from your
+        favorite stores.
       </p>
 
-      <SearchBox coupons={coupons} />
+      <div className="mx-auto mt-8 max-w-2xl">
+        <SearchBox />
+      </div>
     </section>
   );
 }

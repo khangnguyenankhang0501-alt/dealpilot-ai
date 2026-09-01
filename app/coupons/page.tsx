@@ -1,53 +1,43 @@
 import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
+import CouponCard from "@/components/CouponCard";
 
-export default async function CouponPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
+// Tắt cache để danh sách luôn cập nhật mới nhất
+export const revalidate = 0;
 
-  const { data: coupon } = await supabase
+export const metadata = {
+  title: "All Coupons & Promo Codes | DealPilot",
+  description:
+    "Discover the latest working promo codes, discounts, and offers. Save big today!",
+};
+
+export default async function AllCouponsPage() {
+  // Lấy toàn bộ danh sách coupons từ Supabase (mới nhất xếp trước)
+  const { data: coupons } = await supabase
     .from("coupons")
     .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (!coupon) {
-    return (
-      <main className="max-w-4xl mx-auto p-8">
-        <h1>Coupon not found</h1>
-      </main>
-    );
-  }
+    .order("created_at", { ascending: false });
 
   return (
-    <main className="max-w-4xl mx-auto p-8">
-      <Link
-        href={`/stores/${coupon.store_name.toLowerCase()}`}
-        className="text-blue-600"
-      >
-        ← Back to Store
-      </Link>
-
-      <h1 className="text-4xl font-bold mt-4 mb-4">{coupon.title}</h1>
-
-      <p className="text-gray-600 mb-6">Store: {coupon.store_name}</p>
-
-      <div className="bg-green-100 text-green-700 font-bold px-4 py-3 rounded-lg inline-block">
-        {coupon.coupon_code}
+    <main className="max-w-6xl mx-auto px-4 py-10">
+      <div className="mb-10 text-center">
+        <h1 className="text-4xl font-bold mb-3">All Coupons & Deals</h1>
+        <p className="text-gray-600 text-lg">
+          Browse our full collection of verified discounts and promo codes.
+        </p>
       </div>
 
-      <div className="mt-6">
-        <a
-          href={coupon.affiliate_url}
-          target="_blank"
-          className="bg-black text-white px-6 py-3 rounded-lg"
-        >
-          Get Deal
-        </a>
-      </div>
+      {/* Danh sách CouponCard chung */}
+      {coupons && coupons.length > 0 ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {coupons.map((coupon) => (
+            <CouponCard key={coupon.id} coupon={coupon} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center bg-gray-50 p-10 rounded-xl border border-dashed text-gray-500">
+          No coupons available at the moment. Please check back later!
+        </div>
+      )}
     </main>
   );
 }

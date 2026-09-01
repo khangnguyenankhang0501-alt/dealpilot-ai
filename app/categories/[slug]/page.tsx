@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import CouponCard from "@/components/CouponCard"; // Import CouponCard mới
 
 // Bổ sung thêm các category theo plan SEO của bạn
 const VALID_CATEGORIES = [
@@ -51,7 +52,7 @@ export default async function CategoryDetailPage({ params }: Props) {
   const categoryName =
     categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1);
 
-  // Lấy dữ liệu coupons (Dùng ilike theo code của bạn)
+  // Lấy dữ liệu coupons
   const { data: coupons } = await supabase
     .from("coupons")
     .select("*")
@@ -76,28 +77,9 @@ export default async function CategoryDetailPage({ params }: Props) {
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Top {categoryName} Coupons</h2>
         {coupons && coupons.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {coupons.map((coupon) => (
-              <div
-                key={coupon.id}
-                className="border rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-              >
-                <div>
-                  <Link href={`/coupons/${coupon.slug}`}>
-                    <h3 className="text-xl font-semibold mb-2 hover:text-blue-600 transition">
-                      {coupon.title}
-                    </h3>
-                  </Link>
-                  <p className="text-gray-500 mb-4">{coupon.store_name}</p>
-                </div>
-
-                <Link
-                  href={`/coupons/${coupon.slug}`}
-                  className="inline-block bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition text-center"
-                >
-                  Get Code
-                </Link>
-              </div>
+              <CouponCard key={coupon.id} coupon={coupon} />
             ))}
           </div>
         ) : (
@@ -115,7 +97,6 @@ export default async function CategoryDetailPage({ params }: Props) {
             {stores.map((store, index) => (
               <Link
                 key={index}
-                // Thêm .replace để xử lý URL store nếu tên store có dấu cách (vd: "Best Buy" -> "best-buy")
                 href={`/stores/${store?.toLowerCase().replace(/\s+/g, "-")}`}
                 className="border px-5 py-3 rounded-xl font-medium shadow-sm hover:border-blue-500 hover:text-blue-600 transition bg-white"
               >

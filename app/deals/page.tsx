@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { Metadata } from "next";
-import GetDealButton from "@/components/GetDealButton";
+import CouponCard from "@/components/CouponCard"; // Import CouponCard đồng bộ
 
 export const metadata: Metadata = {
   title: "Over 50% Off Deals | DealPilot",
@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function DealsPage() {
+  // Vì lấy từ bảng "coupons" nên hoàn toàn tương thích với component CouponCard
   const { data: deals } = await supabase.from("coupons").select("*");
 
   return (
@@ -21,25 +22,13 @@ export default async function DealsPage() {
       </p>
 
       {!deals || deals.length === 0 ? (
-        <p className="text-gray-500">
+        <p className="text-gray-500 bg-gray-50 p-6 rounded-xl border border-dashed text-center">
           There are currently no deals over 50% off.
         </p>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {deals.map((deal) => (
-            <div
-              key={deal.id}
-              className="border rounded-2xl p-6 shadow-sm hover:shadow-md transition bg-white flex flex-col justify-between"
-            >
-              <div>
-                <h3 className="text-xl font-bold mb-1 text-gray-900">
-                  {deal.title}
-                </h3>
-                <p className="text-gray-500 text-sm mb-4">{deal.store_name}</p>
-              </div>
-
-              <GetDealButton coupon={deal} />
-            </div>
+            <CouponCard key={deal.id} coupon={deal} />
           ))}
         </div>
       )}

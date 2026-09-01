@@ -1,12 +1,33 @@
-import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
+
+export const revalidate = 0;
 
 export default async function FeaturedCoupons() {
-  const { data: popularCoupons } = await supabase
+  // Lấy ngày hiện tại chuẩn YYYY-MM-DD
+  const today = new Date().toISOString().split("T")[0];
+
+  // 1. Lấy tất cả coupon có trạng thái Active từ Supabase
+  const { data: allCoupons, error } = await supabase
     .from("coupons")
     .select("*")
-    .order("clicks", { ascending: false })
-    .limit(6);
+    .eq("status", "Active");
+
+  if (error) {
+    console.error("Failed to load featured coupons:", error);
+    return null;
+  }
+
+  // 2. Lọc bỏ các coupon đã quá hạn bằng JavaScript
+  const validCoupons =
+    allCoupons?.filter((coupon) => {
+      if (!coupon.expires_at) return true; // Không có ngày hết hạn thì giữ lại
+      return coupon.expires_at >= today; // Có ngày hết hạn thì phải từ hôm nay trở đi mới giữ lại
+    }) || [];
+
+  // 3. Sắp xếp theo số lượt click giảm dần và giới hạn tối đa 6 coupon
+  validCoupons.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+  const popularCoupons = validCoupons.slice(0, 6);
 
   if (!popularCoupons || popularCoupons.length === 0) {
     return null;
@@ -22,13 +43,13 @@ export default async function FeaturedCoupons() {
             className="border rounded-xl p-5 shadow-sm hover:shadow-lg transition flex flex-col justify-between"
           >
             <div>
-              <Link href={`/coupons/${coupon?.slug || "#"}`}>
+              <Link href={`/coupons/${coupon.slug || "#"}`}>
                 <h3 className="text-xl font-semibold mb-2 hover:text-blue-600 transition">
-                  {coupon?.title || "No Title"}
+                  {coupon.title || "No Title"}
                 </h3>
               </Link>
 
-              {coupon?.store_name && (
+              {coupon.store_name && (
                 <p className="text-gray-500 mb-3">
                   <Link
                     href={`/stores/${coupon.store_name.toLowerCase()}`}
@@ -39,20 +60,20 @@ export default async function FeaturedCoupons() {
                 </p>
               )}
 
-              {coupon?.coupon_code && (
+              {coupon.coupon_code && (
                 <div className="mt-3 bg-green-100 text-green-700 font-bold px-3 py-1 rounded inline-block">
                   {coupon.coupon_code}
                 </div>
               )}
 
               <p className="text-sm text-gray-500 mt-3">
-                Expires: {coupon?.expires_at || "N/A"}
+                Expires: {coupon.expires_at || "N/A"}
               </p>
             </div>
 
             <div className="mt-4">
               <Link
-                href={`/coupons/${coupon?.slug || "#"}`}
+                href={`/coupons/${coupon.slug || "#"}`}
                 className="block bg-black text-white text-center py-2 rounded-lg hover:bg-gray-800 transition"
               >
                 View Coupon

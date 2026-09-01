@@ -1,83 +1,56 @@
 import FeaturedCoupons from "@/components/FeaturedCoupons";
 import PopularCoupons from "@/components/PopularCoupons";
-import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
-import { Metadata } from "next";
 import CouponCard from "@/components/CouponCard";
+import { supabase } from "@/lib/supabaseClient";
+import type { Metadata } from "next";
 
-// 1. Thêm Metadata cho Trang Chủ (Static Page)
 export const metadata: Metadata = {
-  title: "DealPilot - Best Coupon Codes, Promo Codes & Discounts August 2026",
+  title: "DealPilot - Best Coupon Codes, Promo Codes & Discounts",
   description:
     "Find and save with the latest verified promo codes, discount coupons, and deals for thousands of online stores. Updated daily.",
 };
 
-// 2. Tắt cache để luôn lấy dữ liệu mới nhất từ Supabase
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const { data: coupons } = await supabase.from("coupons").select("*");
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data: coupons } = await supabase
+    .from("coupons")
+    .select(
+      `
+  *,
+  stores!store_id (
+    id,
+    name,
+    slug,
+    logo_url
+  )
+`,
+    )
+    .eq("status", "Active")
+    .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .limit(10);
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
-      {/* Hiển thị mục Featured Coupons */}
+    <main className="mx-auto max-w-6xl px-6 py-10">
       <FeaturedCoupons />
 
-      {/* Hiển thị mục Popular Coupons (Top 6 coupon hot nhất) */}
       <PopularCoupons />
 
-      <h1 className="text-4xl font-bold mb-8 mt-12">Latest Coupons</h1>
+      <h1 className="mt-12 mb-8 text-4xl font-bold">Latest Coupons</h1>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {coupons?.map((coupon) => (
-          <div
-            key={coupon.id}
-            className="border rounded-xl p-5 shadow-sm hover:shadow-lg transition flex flex-col justify-between"
-          >
-            <div>
-              <Link href={`/coupons/${coupon.slug}`}>
-                <h2 className="text-xl font-semibold mb-2 hover:text-blue-600 transition">
-                  {coupon.title}
-                </h2>
-              </Link>
-
-              <p className="text-gray-500 mb-3">
-                <Link
-                  href={`/stores/${coupon.store_name?.toLowerCase()}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {coupon.store_name}
-                </Link>
-              </p>
-
-              <div className="mt-3 inline-flex items-center overflow-hidden rounded-lg border border-green-200">
-                <div className="bg-green-50 px-4 py-2 font-bold text-green-700">
-                  {coupon.coupon_code?.slice(0, 4)}**
-                </div>
-                <Link
-                  href={`/coupons/${coupon.slug}`}
-                  className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition font-medium"
-                >
-                  Get Code
-                </Link>
-              </div>
-
-              <p className="text-sm text-gray-500 mt-3">
-                Expires: {coupon.expires_at}
-              </p>
-            </div>
-
-            <div className="mt-4">
-              <Link
-                href={`/coupons/${coupon.slug}`}
-                className="block bg-gray-100 text-black text-center py-2 rounded-lg hover:bg-gray-200 transition font-medium"
-              >
-                View Coupon
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+      {coupons && coupons.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {coupons.map((coupon) => (
+            <CouponCard key={coupon.id} coupon={coupon} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
+          No active coupons available right now.
+        </div>
+      )}
     </main>
   );
 }
