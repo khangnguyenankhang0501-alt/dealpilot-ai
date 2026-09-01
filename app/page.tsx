@@ -3,6 +3,7 @@ import PopularCoupons from "@/components/PopularCoupons";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { Metadata } from "next";
+import CouponCard from "@/components/CouponCard";
 
 // 1. Thêm Metadata cho Trang Chủ (Static Page)
 export const metadata: Metadata = {
