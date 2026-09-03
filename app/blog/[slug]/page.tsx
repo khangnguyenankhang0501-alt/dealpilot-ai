@@ -85,8 +85,36 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.created_at,
+    dateModified: post.created_at,
+    author: {
+      "@type": "Organization",
+      name: "DealPilot",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "DealPilot",
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://dealpilot-ai-iota.vercel.app/blog/${post.slug}`,
+    },
+  };
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(articleSchema),
+        }}
+      />
+
       <Link
         href="/blog"
         className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
