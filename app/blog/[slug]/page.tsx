@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,7 +13,8 @@ type PageProps = {
   }>;
 };
 
-const SITE_URL = "https://dealpilot-ai-iota.vercel.app";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://dealpilot-ai-iota.vercel.app";
 
 export async function generateMetadata({
   params,
@@ -21,7 +23,7 @@ export async function generateMetadata({
 
   const { data: post } = await supabase
     .from("posts")
-    .select("title, slug, excerpt, seo_title, seo_description")
+    .select("title, slug, excerpt, seo_title, seo_description, image_url")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -38,7 +40,6 @@ export async function generateMetadata({
 
   return {
     title,
-
     description,
 
     alternates: {
@@ -47,22 +48,35 @@ export async function generateMetadata({
 
     openGraph: {
       title,
-
       description,
-
       type: "article",
-
       url: `${SITE_URL}/blog/${post.slug}`,
-
       siteName: "DealPilot",
+
+      ...(post.image_url
+        ? {
+            images: [
+              {
+                url: post.image_url,
+                width: 1200,
+                height: 630,
+                alt: post.title,
+              },
+            ],
+          }
+        : {}),
     },
 
     twitter: {
       card: "summary_large_image",
-
       title,
-
       description,
+
+      ...(post.image_url
+        ? {
+            images: [post.image_url],
+          }
+        : {}),
     },
   };
 }
@@ -86,12 +100,11 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const articleSchema = {
     "@context": "https://schema.org",
-
     "@type": "Article",
 
     headline: post.title,
 
-    description: post.excerpt,
+    description: post.excerpt || "",
 
     datePublished: post.created_at,
 
@@ -99,21 +112,24 @@ export default async function BlogPostPage({ params }: PageProps) {
 
     author: {
       "@type": "Organization",
-
       name: "DealPilot",
     },
 
     publisher: {
       "@type": "Organization",
-
       name: "DealPilot",
     },
 
     mainEntityOfPage: {
       "@type": "WebPage",
-
       "@id": `${SITE_URL}/blog/${post.slug}`,
     },
+
+    ...(post.image_url
+      ? {
+          image: [post.image_url],
+        }
+      : {}),
   };
 
   return (
@@ -132,7 +148,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         ← Back to Blog
       </Link>
 
-      <article className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8_30px_rgba(15,23,42,0.05)]">
+      <article className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
         <div className="px-5 py-7 sm:px-8 sm:py-10 lg:px-12">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-600">
@@ -158,6 +174,19 @@ export default async function BlogPostPage({ params }: PageProps) {
             </p>
           )}
 
+          {post.image_url && (
+            <div className="relative mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <Image
+                src={post.image_url}
+                alt={post.title}
+                width={1200}
+                height={630}
+                className="h-auto w-full object-cover"
+                priority
+              />
+            </div>
+          )}
+
           <div
             className="prose prose-slate mt-8 max-w-none border-t border-slate-100 pt-8 sm:mt-10 sm:pt-10"
             dangerouslySetInnerHTML={{
@@ -179,7 +208,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/coupons"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_8_20px_rgba(16,185,129,0.20)] transition hover:-translate-y-0.5 hover:bg-emerald-400"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.20)] transition hover:-translate-y-0.5 hover:bg-emerald-400"
           >
             Browse Coupons →
           </Link>
