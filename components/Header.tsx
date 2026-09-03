@@ -122,33 +122,56 @@ export default function Header() {
   };
 
   return (
-    <header className="relative z-50 w-full border-b border-slate-200 bg-white">
-      {/* =====================================================
-            DESKTOP / TABLET HEADER
-        ====================================================== */}
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      {/* =========================================================
+          DESKTOP / TABLET
+      ========================================================= */}
 
       <div className="hidden md:block">
+        {/* MAIN HEADER */}
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
-          <div className="flex min-h-[70px] items-center gap-5">
-            {/* LOGO */}
+          <div className="flex min-h-[72px] items-center gap-5">
+            {/* ===================================================
+                LOGO
+            =================================================== */}
 
-            <Link href="/" className="shrink-0" aria-label="DealPilot Home">
-              <span className="text-[22px] font-extrabold tracking-tight text-slate-900">
-                Deal<span className="text-emerald-500">Pilot</span>
+            <Link
+              href="/"
+              className="group shrink-0"
+              aria-label="DealPilot Home"
+            >
+              <span className="text-[23px] font-extrabold tracking-[-0.04em] text-slate-900">
+                Deal
+                <span className="text-emerald-500 transition-colors group-hover:text-emerald-600">
+                  Pilot
+                </span>
               </span>
             </Link>
 
-            {/* DESKTOP SEARCH */}
+            {/* ===================================================
+                SEARCH
+            =================================================== */}
 
-            <div className="relative min-w-0 flex-1 max-w-[440px]">
+            <div className="relative min-w-0 max-w-[430px] flex-1">
               <div
-                className={`flex h-10 items-center rounded-full border bg-white transition ${
-                  searchFocused
-                    ? "border-emerald-500 ring-2 ring-emerald-500/10"
-                    : "border-slate-300"
-                }`}
+                className={`
+                  flex h-11 items-center rounded-full border
+                  bg-slate-50/70
+                  transition-all duration-200
+                  ${
+                    searchFocused
+                      ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08)]"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-white"
+                  }
+                `}
               >
-                <span className="pl-4 text-sm text-slate-400">🔍</span>
+                {/* SEARCH ICON */}
+
+                <span className="flex w-10 shrink-0 items-center justify-center text-[15px] text-slate-400">
+                  🔍
+                </span>
+
+                {/* INPUT */}
 
                 <input
                   type="search"
@@ -159,15 +182,42 @@ export default function Header() {
                     setTimeout(() => setSearchFocused(false), 150);
                   }}
                   placeholder="Search coupons, stores..."
-                  className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                  className="
+                    h-full
+                    min-w-0
+                    flex-1
+                    bg-transparent
+                    pr-2
+                    text-sm
+                    font-medium
+                    text-slate-800
+                    outline-none
+                    placeholder:text-slate-400
+                  "
                   aria-label="Search coupons and stores"
                 />
+
+                {/* CLEAR */}
 
                 {query && (
                   <button
                     type="button"
                     onClick={clearSearch}
-                    className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="
+                      mr-2
+                      flex
+                      h-7
+                      w-7
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-full
+                      text-sm
+                      text-slate-400
+                      transition
+                      hover:bg-slate-200
+                      hover:text-slate-700
+                    "
                     aria-label="Clear search"
                   >
                     ×
@@ -175,22 +225,46 @@ export default function Header() {
                 )}
               </div>
 
-              {/* SEARCH RESULTS */}
+              {/* =================================================
+                  DESKTOP SEARCH RESULTS
+              ================================================= */}
 
               {results.length > 0 && (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                <div
+                  className="
+                    absolute
+                    left-0
+                    right-0
+                    top-[calc(100%+10px)]
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-slate-200
+                    bg-white
+                    shadow-[0_16px_45px_rgba(15,23,42,0.12)]
+                  "
+                >
                   {results.map((item, index) => (
                     <Link
                       key={`${item.slug}-${index}`}
                       href={`/coupons/${item.slug}`}
                       onClick={clearSearch}
-                      className="block border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
+                      className="
+                        block
+                        border-b
+                        border-slate-100
+                        px-4
+                        py-3.5
+                        transition-colors
+                        last:border-b-0
+                        hover:bg-emerald-50/50
+                      "
                     >
-                      <div className="truncate text-sm font-semibold text-slate-900">
+                      <div className="truncate text-sm font-bold text-slate-900">
                         {item.title}
                       </div>
 
-                      <div className="mt-0.5 truncate text-xs text-slate-500">
+                      <div className="mt-1 truncate text-xs font-medium text-slate-500">
                         {item.store_name || "Store"}
                       </div>
                     </Link>
@@ -199,33 +273,77 @@ export default function Header() {
               )}
             </div>
 
-            {/* MAIN NAVIGATION */}
+            {/* ===================================================
+                MAIN NAVIGATION
+            =================================================== */}
 
-            <nav className="ml-auto flex shrink-0 items-center gap-4 text-sm font-medium text-slate-700 lg:gap-5">
+            <nav className="ml-auto flex shrink-0 items-center gap-3 lg:gap-4">
               {mainNavigation.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="whitespace-nowrap transition-colors hover:text-emerald-600"
+                  className="
+                    whitespace-nowrap
+                    rounded-lg
+                    px-2
+                    py-2
+                    text-sm
+                    font-semibold
+                    text-slate-600
+                    transition-all
+                    duration-200
+                    hover:bg-slate-50
+                    hover:text-emerald-600
+                  "
                 >
                   {item.label}
                 </Link>
               ))}
 
-              <SavedLink />
+              {/* SAVED */}
+
+              <div className="ml-1 border-l border-slate-200 pl-3">
+                <SavedLink />
+              </div>
             </nav>
           </div>
         </div>
 
-        {/* SECONDARY NAVIGATION */}
+        {/* =======================================================
+            SECONDARY NAVIGATION
+        ======================================================== */}
 
-        <div className="border-t border-slate-100 bg-slate-50/60">
-          <nav className="mx-auto flex w-full max-w-6xl items-center gap-x-7 overflow-x-auto px-4 py-2.5 text-xs font-medium text-slate-600 lg:px-6 lg:text-sm">
+        <div className="border-t border-slate-100 bg-slate-50/80">
+          <nav
+            className="
+              mx-auto
+              flex
+              w-full
+              max-w-6xl
+              items-center
+              gap-x-7
+              overflow-x-auto
+              px-4
+              py-2.5
+              text-xs
+              font-semibold
+              text-slate-600
+              lg:px-6
+              lg:text-sm
+            "
+          >
             {secondaryNavigation.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="shrink-0 whitespace-nowrap transition-colors hover:text-emerald-600"
+                className="
+                  shrink-0
+                  whitespace-nowrap
+                  rounded-md
+                  py-1
+                  transition-colors
+                  hover:text-emerald-600
+                "
               >
                 {item.label}
               </Link>
@@ -234,43 +352,81 @@ export default function Header() {
         </div>
       </div>
 
-      {/* =====================================================
-            MOBILE HEADER
-        ====================================================== */}
+      {/* =========================================================
+          MOBILE
+      ========================================================= */}
 
       <div className="md:hidden">
-        {/* TOP ROW */}
+        {/* =======================================================
+            MOBILE TOP ROW
+        ======================================================== */}
 
-        <div className="flex h-16 items-center justify-between px-4">
+        <div className="flex h-[62px] items-center justify-between px-4">
           {/* LOGO */}
 
           <Link
             href="/"
             onClick={closeMobileMenu}
             aria-label="DealPilot Home"
-            className="shrink-0"
+            className="group shrink-0"
           >
-            <span className="text-[21px] font-extrabold tracking-tight text-slate-900">
-              Deal<span className="text-emerald-500">Pilot</span>
+            <span className="text-[22px] font-extrabold tracking-[-0.04em] text-slate-900">
+              Deal
+              <span className="text-emerald-500 group-hover:text-emerald-600">
+                Pilot
+              </span>
             </span>
           </Link>
 
-          {/* MOBILE ACTIONS */}
+          {/* ACTIONS */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* SAVED */}
+
             <Link
               href="/saved"
               onClick={closeMobileMenu}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-lg text-slate-700 transition hover:bg-slate-100"
+              className="
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-xl
+                text-xl
+                text-slate-600
+                transition
+                hover:bg-slate-100
+                hover:text-emerald-600
+              "
               aria-label="Saved coupons"
             >
               ♡
             </Link>
 
+            {/* MENU */}
+
             <button
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl text-slate-800 shadow-sm"
+              className="
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-slate-200
+                bg-white
+                text-xl
+                font-medium
+                text-slate-800
+                shadow-sm
+                transition
+                hover:border-slate-300
+                hover:bg-slate-50
+              "
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
@@ -279,17 +435,30 @@ export default function Header() {
           </div>
         </div>
 
-        {/* MOBILE SEARCH */}
+        {/* =======================================================
+            MOBILE SEARCH
+        ======================================================== */}
 
         <div className="px-4 pb-3">
           <div
-            className={`flex h-11 items-center rounded-full border bg-white transition ${
-              searchFocused
-                ? "border-emerald-500 ring-2 ring-emerald-500/10"
-                : "border-slate-300"
-            }`}
+            className={`
+              flex
+              h-11
+              items-center
+              rounded-full
+              border
+              bg-slate-50/70
+              transition-all
+              ${
+                searchFocused
+                  ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08)]"
+                  : "border-slate-200"
+              }
+            `}
           >
-            <span className="pl-4 text-sm text-slate-400">🔍</span>
+            <span className="flex w-10 shrink-0 items-center justify-center text-[15px] text-slate-400">
+              🔍
+            </span>
 
             <input
               type="search"
@@ -300,7 +469,18 @@ export default function Header() {
                 setTimeout(() => setSearchFocused(false), 150);
               }}
               placeholder="Search coupons, stores..."
-              className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              className="
+                h-full
+                min-w-0
+                flex-1
+                bg-transparent
+                px-1
+                text-sm
+                font-medium
+                text-slate-800
+                outline-none
+                placeholder:text-slate-400
+              "
               aria-label="Search coupons and stores"
             />
 
@@ -308,7 +488,21 @@ export default function Header() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm text-slate-400 hover:bg-slate-100"
+                className="
+                  mr-2
+                  flex
+                  h-7
+                  w-7
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  text-sm
+                  text-slate-400
+                  transition
+                  hover:bg-slate-200
+                  hover:text-slate-700
+                "
                 aria-label="Clear search"
               >
                 ×
@@ -316,23 +510,47 @@ export default function Header() {
             )}
           </div>
 
-          {/* MOBILE SEARCH RESULTS */}
+          {/* =====================================================
+              MOBILE SEARCH RESULTS
+          ===================================================== */}
 
           {results.length > 0 && (
             <div className="relative z-50">
-              <div className="absolute left-0 right-0 top-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+              <div
+                className="
+                  absolute
+                  left-0
+                  right-0
+                  top-2
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  shadow-[0_16px_40px_rgba(15,23,42,0.14)]
+                "
+              >
                 {results.map((item, index) => (
                   <Link
                     key={`${item.slug}-${index}`}
                     href={`/coupons/${item.slug}`}
                     onClick={clearSearch}
-                    className="block border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
+                    className="
+                      block
+                      border-b
+                      border-slate-100
+                      px-4
+                      py-3.5
+                      transition-colors
+                      last:border-b-0
+                      hover:bg-emerald-50/50
+                    "
                   >
-                    <div className="truncate text-sm font-semibold text-slate-900">
+                    <div className="truncate text-sm font-bold text-slate-900">
                       {item.title}
                     </div>
 
-                    <div className="mt-0.5 truncate text-xs text-slate-500">
+                    <div className="mt-1 truncate text-xs font-medium text-slate-500">
                       {item.store_name || "Store"}
                     </div>
                   </Link>
@@ -342,11 +560,20 @@ export default function Header() {
           )}
         </div>
 
-        {/* MOBILE MENU */}
+        {/* =======================================================
+            MOBILE MENU
+        ======================================================== */}
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-200 bg-white shadow-lg">
-            <nav className="px-4 py-3">
+          <div
+            className="
+              border-t
+              border-slate-200
+              bg-white
+              shadow-[0_12px_30px_rgba(15,23,42,0.08)]
+            "
+          >
+            <nav className="px-4 py-4">
               {/* MAIN LINKS */}
 
               <div className="grid grid-cols-2 gap-2">
@@ -355,7 +582,21 @@ export default function Header() {
                     key={item.href}
                     href={item.href}
                     onClick={closeMobileMenu}
-                    className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-emerald-50 hover:text-emerald-700"
+                    className="
+                      rounded-xl
+                      border
+                      border-slate-100
+                      bg-slate-50
+                      px-4
+                      py-3
+                      text-sm
+                      font-bold
+                      text-slate-800
+                      transition
+                      hover:border-emerald-100
+                      hover:bg-emerald-50
+                      hover:text-emerald-700
+                    "
                   >
                     {item.label}
                   </Link>
@@ -364,16 +605,30 @@ export default function Header() {
                 <Link
                   href="/saved"
                   onClick={closeMobileMenu}
-                  className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-emerald-50 hover:text-emerald-700"
+                  className="
+                    rounded-xl
+                    border
+                    border-slate-100
+                    bg-slate-50
+                    px-4
+                    py-3
+                    text-sm
+                    font-bold
+                    text-slate-800
+                    transition
+                    hover:border-emerald-100
+                    hover:bg-emerald-50
+                    hover:text-emerald-700
+                  "
                 >
                   ♡ Saved
                 </Link>
               </div>
 
-              {/* SECONDARY LINKS */}
+              {/* SECONDARY */}
 
-              <div className="mt-3 border-t border-slate-100 pt-3">
-                <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <p className="mb-2 px-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
                   Explore
                 </p>
 
@@ -383,7 +638,17 @@ export default function Header() {
                       key={item.href}
                       href={item.href}
                       onClick={closeMobileMenu}
-                      className="rounded-lg px-2 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-emerald-600"
+                      className="
+                        rounded-lg
+                        px-2
+                        py-2.5
+                        text-sm
+                        font-medium
+                        text-slate-600
+                        transition
+                        hover:bg-slate-50
+                        hover:text-emerald-600
+                      "
                     >
                       {item.label}
                     </Link>

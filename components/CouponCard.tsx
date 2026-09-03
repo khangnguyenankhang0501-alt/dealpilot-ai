@@ -9,22 +9,53 @@ interface CouponCardProps {
   onFavoriteChange?: (saved: boolean) => void;
 }
 
+function formatPrice(value?: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  return `$${numberValue.toFixed(2)}`;
+}
+
+function formatDiscount(value?: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  return `${numberValue}% OFF`;
+}
+
 export default function CouponCard({
   coupon,
   onFavoriteChange,
 }: CouponCardProps) {
   const hasImage = Boolean(coupon.image_url);
 
-  const hasDiscount =
-    coupon.discount_value !== null && coupon.discount_value !== undefined;
+  const discount = formatDiscount(coupon.discount_value);
 
-  const hasPrice =
-    coupon.sale_price !== null && coupon.sale_price !== undefined;
+  const salePrice = formatPrice(coupon.sale_price);
 
-  const hasOriginalPrice =
-    coupon.original_price !== null && coupon.original_price !== undefined;
+  const originalPrice = formatPrice(coupon.original_price);
 
   const hasCode = Boolean(coupon.coupon_code);
+
+  const hasStore = Boolean(coupon.stores);
+
+  const storeName = coupon.stores?.name || "Store";
+
+  const storeLogo = coupon.stores?.logo_url || null;
 
   return (
     <article
@@ -32,21 +63,22 @@ export default function CouponCard({
         group
         flex
         h-full
-        min-h-0
+        min-h-[430px]
         w-full
         flex-col
         overflow-hidden
-        rounded-2xl
+        rounded-[20px]
         border
         border-gray-200
         bg-white
-        shadow-sm
-        transition-[transform,box-shadow,border-color]
+        text-slate-900
+        shadow-[0_8px_30px_rgba(15,23,42,0.06)]
+        transition-all
         duration-300
         ease-out
         hover:-translate-y-1
         hover:border-gray-300
-        hover:shadow-lg
+        hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]
       "
     >
       {/* =========================================================
@@ -56,65 +88,90 @@ export default function CouponCard({
       <div
         className="
           relative
-          h-[150px]
+          h-[165px]
           w-full
           shrink-0
           overflow-hidden
-          bg-gray-50
-          p-3
-          sm:h-[160px]
-          sm:p-3.5
+          bg-slate-100
+          sm:h-[175px]
         "
       >
+        {/* IMAGE */}
+
         {hasImage ? (
           <Image
             src={coupon.image_url!}
-            alt={coupon.title}
+            alt={coupon.title || "Deal"}
             fill
             sizes="
-              (max-width: 640px) 280px,
-              (max-width: 1024px) 320px,
+              (max-width: 640px) 100vw,
+              (max-width: 1024px) 50vw,
               320px
             "
             className="
               object-contain
-              object-center
-              p-2
+              p-4
               transition-transform
               duration-500
               ease-out
-              group-hover:scale-[1.04]
+              group-hover:scale-[1.06]
             "
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
-            No Image
+          <div
+            className="
+              flex
+              h-full
+              w-full
+              items-center
+              justify-center
+              text-5xl
+            "
+          >
+            🏷️
           </div>
         )}
 
-        {/* VERIFIED */}
+        {/* SOFT IMAGE OVERLAY */}
 
-        {coupon.verified && (
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-gradient-to-br
+            from-cyan-100/0
+            via-transparent
+            to-emerald-100/20
+            opacity-0
+            transition-opacity
+            duration-300
+            group-hover:opacity-100
+          "
+        />
+
+        {/* DISCOUNT */}
+
+        {discount && (
           <span
             className="
               absolute
               left-3
               top-3
               z-10
-              rounded-full
-              border
-              border-gray-100
-              bg-white
-              px-2
-              py-1
+              rounded-lg
+              bg-emerald-500
+              px-2.5
+              py-1.5
               text-[10px]
-              font-bold
-              text-gray-800
+              font-black
+              tracking-wide
+              text-white
               shadow-sm
               sm:text-xs
             "
           >
-            Verified
+            {discount}
           </span>
         )}
 
@@ -127,10 +184,10 @@ export default function CouponCard({
               bottom-3
               left-3
               z-10
-              rounded-md
+              rounded-lg
               bg-purple-600
-              px-2
-              py-1
+              px-2.5
+              py-1.5
               text-[10px]
               font-bold
               text-white
@@ -150,6 +207,33 @@ export default function CouponCard({
             onChange={onFavoriteChange}
           />
         </div>
+
+        {/* VERIFIED */}
+
+        {coupon.verified && (
+          <div
+            title="Verified deal"
+            className="
+              absolute
+              bottom-3
+              right-3
+              z-10
+              flex
+              h-6
+              w-6
+              items-center
+              justify-center
+              rounded-full
+              bg-emerald-500
+              text-xs
+              font-black
+              text-white
+              shadow-md
+            "
+          >
+            ✓
+          </div>
+        )}
       </div>
 
       {/* =========================================================
@@ -162,56 +246,72 @@ export default function CouponCard({
           min-h-0
           flex-1
           flex-col
-          justify-between
-          p-3
-          sm:p-3.5
+          p-3.5
+          sm:p-4
         "
       >
-        {/* TOP CONTENT */}
+        {/* =======================================================
+            TOP
+        ======================================================= */}
 
         <div className="min-w-0">
-          {/* DISCOUNT / BADGE */}
+          {/* BADGES */}
 
           <div
             className="
               mb-2.5
               flex
-              min-h-[22px]
+              min-h-[24px]
               flex-wrap
               items-center
               gap-1.5
             "
           >
-            {hasDiscount && (
+            {discount ? (
               <span
                 className="
                   rounded-md
-                  bg-red-50
+                  bg-emerald-50
                   px-2
                   py-1
-                  text-xs
-                  font-bold
-                  text-red-600
-                  sm:text-sm
+                  text-[10px]
+                  font-extrabold
+                  text-emerald-600
+                  sm:text-xs
                 "
               >
-                {coupon.discount_value}% OFF
+                {discount}
+              </span>
+            ) : (
+              <span
+                className="
+                  rounded-md
+                  bg-slate-100
+                  px-2
+                  py-1
+                  text-[10px]
+                  font-bold
+                  text-slate-500
+                  sm:text-xs
+                "
+              >
+                DEAL
               </span>
             )}
 
             {coupon.badge && (
               <span
                 className="
-                  max-w-full
+                  max-w-[55%]
                   truncate
                   rounded-md
-                  bg-green-50
+                  bg-cyan-50
                   px-2
                   py-1
-                  text-xs
-                  font-medium
-                  text-green-700
-                  sm:text-sm
+                  text-[10px]
+                  font-bold
+                  text-cyan-700
+                  sm:text-xs
                 "
               >
                 {coupon.badge}
@@ -221,119 +321,216 @@ export default function CouponCard({
 
           {/* PRICE */}
 
-          {hasPrice && (
-            <div className="mb-1 flex min-w-0 items-baseline gap-1.5">
+          <div
+            className="
+              mb-1.5
+              flex
+              min-w-0
+              items-baseline
+              gap-2
+            "
+          >
+            {salePrice ? (
               <span
                 className="
                   truncate
-                  text-lg
-                  font-extrabold
+                  text-[20px]
+                  font-black
+                  leading-none
                   tracking-tight
-                  text-gray-900
-                  sm:text-xl
+                  text-slate-900
+                  sm:text-[22px]
                 "
               >
-                ${Number(coupon.sale_price).toFixed(2)}
+                {salePrice}
               </span>
+            ) : (
+              <span
+                className="
+                  text-[15px]
+                  font-extrabold
+                  text-slate-700
+                "
+              >
+                See deal
+              </span>
+            )}
 
-              {hasOriginalPrice && (
-                <span
-                  className="
-                    shrink-0
-                    text-xs
-                    font-medium
-                    text-gray-400
-                    line-through
-                    sm:text-sm
-                  "
-                >
-                  ${Number(coupon.original_price).toFixed(2)}
-                </span>
-              )}
-            </div>
-          )}
+            {originalPrice && (
+              <span
+                className="
+                  shrink-0
+                  text-[10px]
+                  font-medium
+                  text-slate-400
+                  line-through
+                  sm:text-xs
+                "
+              >
+                {originalPrice}
+              </span>
+            )}
+          </div>
 
           {/* TITLE */}
 
           <h3
             className="
               mb-2
-              min-h-[40px]
+              min-h-[42px]
               line-clamp-2
               text-sm
               font-bold
-              leading-5
-              text-gray-900
+              leading-[1.45]
+              text-slate-900
               sm:min-h-[44px]
-              sm:text-base
-              sm:leading-6
+              sm:text-[15px]
             "
           >
-            {coupon.title}
+            {coupon.title || "Special Deal"}
           </h3>
 
           {/* STORE */}
 
-          {coupon.stores && (
-            <div className="mb-3">
+          <div className="mb-3 min-h-[28px]">
+            {hasStore ? (
               <Link
-                href={`/stores/${coupon.stores.slug}`}
+                href={`/stores/${coupon.stores!.slug}`}
                 className="
+                  group/store
                   flex
                   min-w-0
                   items-center
                   gap-2
-                  text-xs
-                  font-medium
-                  text-gray-500
+                  text-[11px]
+                  font-bold
+                  text-slate-500
                   transition-colors
-                  hover:text-gray-900
-                  sm:text-sm
+                  hover:text-slate-900
+                  sm:text-xs
                 "
               >
-                {coupon.stores.logo_url ? (
+                {/* STORE LOGO */}
+
+                {storeLogo ? (
                   <div
                     className="
                       relative
-                      h-5
-                      w-5
+                      h-6
+                      w-6
                       shrink-0
                       overflow-hidden
                       rounded-md
                       border
-                      border-gray-100
+                      border-slate-100
                       bg-white
-                      sm:h-6
-                      sm:w-6
+                      shadow-sm
                     "
                   >
                     <Image
-                      src={coupon.stores.logo_url}
-                      alt={coupon.stores.name}
+                      src={storeLogo}
+                      alt={storeName}
                       fill
                       sizes="24px"
-                      className="object-contain p-1"
+                      className="
+                        object-contain
+                        p-1
+                      "
                     />
                   </div>
-                ) : null}
+                ) : (
+                  <div
+                    className="
+                      flex
+                      h-6
+                      w-6
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-md
+                      bg-slate-100
+                      text-[9px]
+                      font-black
+                      text-slate-500
+                    "
+                  >
+                    S
+                  </div>
+                )}
 
-                <span className="min-w-0 truncate">{coupon.stores.name}</span>
+                <span className="min-w-0 truncate">{storeName}</span>
+
+                {coupon.verified && (
+                  <span
+                    className="
+                      flex
+                      h-4
+                      w-4
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-emerald-100
+                      text-[9px]
+                      font-black
+                      text-emerald-600
+                    "
+                  >
+                    ✓
+                  </span>
+                )}
               </Link>
-            </div>
-          )}
+            ) : (
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  text-[11px]
+                  font-bold
+                  text-slate-400
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-6
+                    w-6
+                    items-center
+                    justify-center
+                    rounded-md
+                    bg-slate-100
+                    text-[9px]
+                    font-black
+                  "
+                >
+                  S
+                </div>
+
+                <span>{storeName}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* =========================================================
-            BOTTOM CONTENT
-        ========================================================= */}
+        {/* =======================================================
+            BOTTOM
+        ======================================================= */}
 
         <div className="mt-auto">
           {/* CTA */}
 
-          <div className="mt-3 flex w-full items-center gap-2">
+          <div
+            className="
+              flex
+              w-full
+              items-center
+              gap-2
+            "
+          >
             {hasCode ? (
               <>
-                {/* CODE */}
+                {/* COUPON CODE */}
 
                 <div
                   className="
@@ -344,15 +541,15 @@ export default function CouponCard({
                     items-center
                     justify-center
                     overflow-hidden
-                    rounded-lg
+                    rounded-xl
                     border
-                    border-green-300
-                    bg-green-50
-                    px-2
+                    border-emerald-200
+                    bg-emerald-50
+                    px-2.5
                     text-[10px]
-                    font-bold
-                    tracking-wider
-                    text-green-700
+                    font-black
+                    tracking-[0.12em]
+                    text-emerald-700
                     sm:text-xs
                   "
                 >
@@ -361,9 +558,9 @@ export default function CouponCard({
                   </span>
                 </div>
 
-                {/* BUTTON */}
+                {/* CTA BUTTON */}
 
-                <div className="w-auto shrink-0">
+                <div className="shrink-0">
                   <CouponLinkButton
                     couponSlug={coupon.slug}
                     couponCode={coupon.coupon_code}
@@ -384,24 +581,57 @@ export default function CouponCard({
               TRUST / DETAILS
           ===================================================== */}
 
-          <div className="mt-3 space-y-1 text-[10px] leading-4 text-gray-500 sm:text-xs">
+          <div
+            className="
+              mt-3
+              min-h-[58px]
+              space-y-1
+              border-t
+              border-slate-100
+              pt-2.5
+              text-[10px]
+              leading-4
+              text-slate-500
+              sm:text-[11px]
+            "
+          >
             {/* VERIFIED */}
 
             {coupon.verified && (
-              <div className="font-semibold text-green-600">Verified Deal</div>
+              <div className="flex items-center gap-1.5 font-bold text-emerald-600">
+                <span
+                  className="
+                    flex
+                    h-3.5
+                    w-3.5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-100
+                    text-[8px]
+                    font-black
+                  "
+                >
+                  ✓
+                </span>
+
+                <span>Verified Deal</span>
+              </div>
             )}
 
             {/* RATING */}
 
             {coupon.rating !== null && coupon.rating !== undefined && (
               <div className="flex items-center gap-1">
-                <span className="text-yellow-400">★</span>
+                <span className="text-amber-400">★</span>
 
-                <span>{Number(coupon.rating).toFixed(1)}</span>
+                <span className="font-semibold text-slate-600">
+                  {Number(coupon.rating).toFixed(1)}
+                </span>
 
                 {coupon.review_count !== null &&
                   coupon.review_count !== undefined && (
-                    <span className="truncate">
+                    <span className="truncate text-slate-400">
                       ({coupon.review_count} reviews)
                     </span>
                   )}
@@ -412,7 +642,7 @@ export default function CouponCard({
 
             {coupon.popularity_count !== null &&
               coupon.popularity_count !== undefined &&
-              coupon.popularity_count > 0 && (
+              Number(coupon.popularity_count) > 0 && (
                 <div className="truncate">
                   🔥 {coupon.popularity_count} clicks
                 </div>
@@ -421,7 +651,7 @@ export default function CouponCard({
             {/* SHIPPING */}
 
             {coupon.shipping_text && (
-              <div className="truncate">{coupon.shipping_text}</div>
+              <div className="truncate">🚚 {coupon.shipping_text}</div>
             )}
 
             {/* SOLD */}
@@ -433,7 +663,9 @@ export default function CouponCard({
             {/* EXPIRATION */}
 
             {coupon.expires_at && (
-              <div className="truncate">Expires: {coupon.expires_at}</div>
+              <div className="truncate text-slate-400">
+                Expires: {coupon.expires_at}
+              </div>
             )}
           </div>
         </div>

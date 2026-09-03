@@ -3,15 +3,15 @@ import { supabase } from "@/lib/supabaseClient";
 
 export const revalidate = 0;
 
-export default async function FeaturedCoupons() {
+export default async function LatestCoupons() {
   /* =========================================================
-     CURRENT DATE
+     CURRENT TIME
   ========================================================= */
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString();
 
   /* =========================================================
-     FETCH FEATURED COUPONS
+     FETCH LATEST COUPONS
   ========================================================= */
 
   const { data: coupons, error } = await supabase
@@ -29,18 +29,18 @@ export default async function FeaturedCoupons() {
     )
     .eq("status", "Active")
     .or(`expires_at.is.null,expires_at.gte.${today}`)
-    .order("click_count", {
+    .order("created_at", {
       ascending: false,
       nullsFirst: false,
     })
-    .limit(10);
+    .limit(12);
 
   /* =========================================================
      ERROR HANDLING
   ========================================================= */
 
   if (error) {
-    console.error("Error fetching featured coupons:", error);
+    console.error("Error fetching latest coupons:", error);
   }
 
   /* =========================================================
@@ -48,8 +48,88 @@ export default async function FeaturedCoupons() {
   ========================================================= */
 
   if (!coupons || coupons.length === 0) {
-    return null;
+    return (
+      <section className="w-full">
+        {/* HEADER */}
+
+        <div className="mb-5 sm:mb-6">
+          <div className="flex items-center gap-2">
+            <span
+              className="
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-cyan-50
+                text-base
+                shadow-sm
+                sm:h-9
+                sm:w-9
+                sm:text-lg
+              "
+            >
+              🆕
+            </span>
+
+            <h2
+              className="
+                text-xl
+                font-black
+                tracking-tight
+                text-slate-900
+                sm:text-2xl
+              "
+            >
+              Latest Coupons
+            </h2>
+          </div>
+
+          <p
+            className="
+              mt-1.5
+              text-xs
+              leading-5
+              text-slate-500
+              sm:text-sm
+            "
+          >
+            Fresh coupon codes and deals added recently.
+          </p>
+        </div>
+
+        {/* EMPTY STATE */}
+
+        <div
+          className="
+            flex
+            min-h-[180px]
+            items-center
+            justify-center
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            px-5
+            py-12
+            text-center
+            text-sm
+            font-medium
+            text-slate-500
+            shadow-sm
+          "
+        >
+          No active coupons available right now.
+        </div>
+      </section>
+    );
   }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <section className="w-full">
@@ -57,7 +137,16 @@ export default async function FeaturedCoupons() {
           HEADER
       ===================================================== */}
 
-      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+      <div
+        className="
+          mb-5
+          flex
+          items-end
+          justify-between
+          gap-4
+          sm:mb-6
+        "
+      >
         {/* LEFT */}
 
         <div className="min-w-0">
@@ -71,7 +160,7 @@ export default async function FeaturedCoupons() {
                 items-center
                 justify-center
                 rounded-xl
-                bg-amber-50
+                bg-cyan-50
                 text-base
                 shadow-sm
                 sm:h-9
@@ -79,7 +168,7 @@ export default async function FeaturedCoupons() {
                 sm:text-lg
               "
             >
-              ⭐
+              🆕
             </span>
 
             <h2
@@ -92,7 +181,7 @@ export default async function FeaturedCoupons() {
                 sm:text-2xl
               "
             >
-              Featured Coupons
+              Latest Coupons
             </h2>
           </div>
 
@@ -106,11 +195,11 @@ export default async function FeaturedCoupons() {
               sm:text-sm
             "
           >
-            Hand-picked coupon codes and offers worth checking today.
+            Fresh coupon codes and deals added recently.
           </p>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT STATUS */}
 
         <div
           className="
@@ -129,9 +218,27 @@ export default async function FeaturedCoupons() {
           "
         >
           <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span
+              className="
+                absolute
+                h-full
+                w-full
+                animate-ping
+                rounded-full
+                bg-emerald-400
+                opacity-60
+              "
+            />
 
-            <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span
+              className="
+                relative
+                h-2.5
+                w-2.5
+                rounded-full
+                bg-emerald-500
+              "
+            />
           </span>
 
           <span className="text-[11px] font-bold text-slate-500">
@@ -141,81 +248,35 @@ export default async function FeaturedCoupons() {
       </div>
 
       {/* =====================================================
-          COUPON SCROLLER
+          COUPON GRID
       ===================================================== */}
 
       <div
         className="
-  popular-coupons-scroll
-  flex
-  w-full
-  gap-4
-  overflow-x-scroll
-  overflow-y-hidden
-  pb-4
-  pt-1
-  snap-x
-  snap-mandatory
-  scroll-smooth
-  overscroll-x-contain
-  touch-pan-x
-  [-webkit-overflow-scrolling:touch]
-
-  [scrollbar-width:auto]
-  [scrollbar-color:#cbd5e1_#f1f5f9]
-
-  [&::-webkit-scrollbar]:h-3
-  [&::-webkit-scrollbar-track]:rounded-full
-  [&::-webkit-scrollbar-track]:bg-slate-100
-  [&::-webkit-scrollbar-thumb]:rounded-full
-  [&::-webkit-scrollbar-thumb]:bg-slate-300
-  hover:[&::-webkit-scrollbar-thumb]:bg-slate-400
-
-  sm:gap-5
-"
+          grid
+          w-full
+          grid-cols-1
+          items-stretch
+          gap-4
+          sm:grid-cols-2
+          sm:gap-5
+          lg:grid-cols-3
+        "
       >
         {coupons.map((coupon) => (
           <div
             key={coupon.id}
             className="
-    w-[270px]
-    min-w-[270px]
-    max-w-[270px]
-    shrink-0
-    snap-start
-    self-stretch
-    sm:w-[290px]
-    sm:min-w-[290px]
-    sm:max-w-[290px]
-  "
+              flex
+              min-w-0
+              w-full
+              max-w-full
+            "
           >
             <CouponCard coupon={coupon} />
           </div>
         ))}
       </div>
-
-      {/* =====================================================
-          MOBILE SCROLL HINT
-      ===================================================== */}
-
-      {coupons.length > 2 && (
-        <div
-          className="
-            mt-1
-            flex
-            items-center
-            justify-center
-            gap-1.5
-            text-[10px]
-            font-semibold
-            text-slate-400
-            sm:hidden
-          "
-        >
-          <span>Swipe to explore</span>
-          <span className="text-slate-500">→</span>
-        </div>
-      )}
     </section>
   );
 }

@@ -37,7 +37,9 @@ export default async function TrendingCoupons() {
 
   return (
     <section className="my-8 w-full sm:my-10">
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
       <div className="mb-4 flex items-end justify-between gap-3 sm:mb-5">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
@@ -60,7 +62,9 @@ export default async function TrendingCoupons() {
         </div>
       </div>
 
-      {/* HORIZONTAL SCROLLER */}
+      {/* =====================================================
+          HORIZONTAL COUPON SCROLLER
+      ===================================================== */}
       <div
         className="
           trending-coupons-scroll
@@ -110,12 +114,16 @@ export default async function TrendingCoupons() {
         ))}
       </div>
 
-      {/* MOBILE HINT */}
-      <div className="mt-1 text-center sm:hidden">
-        <span className="text-[11px] font-medium text-slate-400">
-          ← Swipe to explore more →
-        </span>
-      </div>
+      {/* =====================================================
+          MOBILE HINT
+      ===================================================== */}
+      {coupons.length > 1 && (
+        <div className="mt-1 text-center sm:hidden">
+          <span className="text-[11px] font-medium text-slate-400">
+            ← Swipe to explore more →
+          </span>
+        </div>
+      )}
     </section>
   );
 }

@@ -4,12 +4,17 @@ import { supabase } from "@/lib/supabaseClient";
 const SITE_URL = "https://dealpilot-ai-iota.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [{ data: coupons }, { data: stores }, { data: categories }] =
-    await Promise.all([
-      supabase.from("coupons").select("slug, created_at"),
-      supabase.from("stores").select("slug, created_at"),
-      supabase.from("categories").select("slug, created_at"),
-    ]);
+  const [
+    { data: coupons },
+    { data: stores },
+    { data: categories },
+    { data: posts },
+  ] = await Promise.all([
+    supabase.from("coupons").select("slug, created_at"),
+    supabase.from("stores").select("slug, created_at"),
+    supabase.from("categories").select("slug, created_at"),
+    supabase.from("posts").select("slug, created_at"),
+  ]);
 
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -75,5 +80,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...staticPages, ...couponPages, ...storePages, ...categoryPages];
+  const blogPages: MetadataRoute.Sitemap = (posts ?? [])
+    .filter((post) => post.slug)
+    .map((post) => ({
+      url: `${SITE_URL}/blog/${post.slug}`,
+      lastModified: post.created_at ? new Date(post.created_at) : new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    }));
+
+  return [
+    ...staticPages,
+    ...couponPages,
+    ...storePages,
+    ...categoryPages,
+    ...blogPages,
+  ];
 }

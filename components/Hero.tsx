@@ -106,20 +106,21 @@ function DesktopProductCard({
 
   const positionClass =
     position === "left"
-      ? "left-[6%] top-[7%] rotate-[-6deg]"
+      ? "left-[4%] top-[12%] rotate-[-7deg]"
       : position === "top"
-        ? "right-[8%] top-[8%] rotate-[6deg]"
-        : "left-[30%] bottom-[3%] rotate-[-2deg]";
+        ? "right-[7%] top-[6%] rotate-[6deg]"
+        : "left-[29%] bottom-[5%] rotate-[-3deg]";
 
   return (
     <a
       href={href}
       className={`
+        group
         absolute
         z-20
         block
-        w-[185px]
-        max-w-[185px]
+w-[195px]
+max-w-[195px]
         overflow-hidden
         rounded-[20px]
         border
@@ -138,7 +139,7 @@ function DesktopProductCard({
     >
       {/* IMAGE */}
 
-      <div className="relative flex h-[135px] w-full items-center justify-center overflow-hidden rounded-[15px] bg-slate-100">
+      <div className="relative flex h-[142px] w-full items-center justify-center overflow-hidden rounded-[15px] bg-slate-100">
         <span className="absolute left-2 top-2 z-10 rounded-lg bg-emerald-500 px-2 py-1 text-[10px] font-extrabold text-white shadow-sm">
           {discount}
         </span>
@@ -610,7 +611,7 @@ export default function Hero({
           MAIN
       ================================================= */}
 
-      <div className="relative z-10 grid min-h-[450px] grid-cols-1 lg:grid-cols-[43%_57%]">
+      <div className="relative z-10 grid min-h-[480px] grid-cols-1 lg:grid-cols-[44%_56%]">
         {/* =================================================
             LEFT
         ================================================= */}
@@ -624,7 +625,7 @@ export default function Hero({
 
           {/* TITLE */}
 
-          <h1 className="max-w-[520px] text-[38px] font-black leading-[1.03] tracking-tight sm:text-5xl lg:text-[52px]">
+          <h1 className="max-w-[520px] text-[38px] font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-[54px]">
             Smart deals.
             <span className="block bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">
               Bigger savings.
@@ -683,7 +684,7 @@ export default function Hero({
           <a
             href="/deals"
             className="
-              mt-7
+              mt-8
               flex
               w-fit
               items-center
@@ -712,7 +713,7 @@ export default function Hero({
             DESKTOP
         ================================================= */}
 
-        <div className="relative hidden min-h-[450px] lg:block">
+        <div className="relative hidden min-h-[480px] lg:block">
           {/* RINGS */}
 
           <div className="absolute left-[12%] top-[17%] h-[330px] w-[330px] rounded-full border border-cyan-300/20" />

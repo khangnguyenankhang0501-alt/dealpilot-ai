@@ -1,8 +1,10 @@
 import PopularCoupons from "@/components/PopularCoupons";
-import CouponCard from "@/components/CouponCard";
+import TrendingCoupons from "@/components/TrendingCoupons";
+import LatestCoupons from "@/components/LatestCoupons";
 import { supabase } from "@/lib/supabaseClient";
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
+import FeaturedCoupons from "@/components/FeaturedCoupons";
 
 export const metadata: Metadata = {
   title: "DealPilot - Best Coupon Codes, Promo Codes & Discounts",
@@ -40,6 +42,7 @@ export default async function HomePage() {
     .or(`expires_at.is.null,expires_at.gte.${today}`)
     .order("created_at", {
       ascending: false,
+      nullsFirst: false,
     })
     .limit(50);
 
@@ -93,7 +96,7 @@ export default async function HomePage() {
       : 0;
 
   /* =========================================================
-     HERO STATS OBJECT
+     HERO STATS
   ========================================================= */
 
   const heroStats = {
@@ -103,175 +106,65 @@ export default async function HomePage() {
   };
 
   /* =========================================================
-     LATEST COUPONS
-     
-     activeCoupons đã được sắp xếp created_at DESC
-     nên các coupon đầu tiên chính là coupon mới nhất.
-  ========================================================= */
-
-  const latestCoupons = activeCoupons.slice(0, 12);
-
-  /* =========================================================
      PAGE
   ========================================================= */
 
   return (
-    <main
-      className="
-        mx-auto
-        w-full
-        max-w-6xl
-        px-4
-        py-5
-        sm:px-6
-        sm:py-8
-        lg:px-8
-      "
-    >
+    <main className="w-full">
       {/* =====================================================
-          HERO
+          PAGE CONTAINER
       ===================================================== */}
 
-      <Hero coupons={activeCoupons} stats={heroStats} />
-
-      {/* =====================================================
-          POPULAR COUPONS
-      ===================================================== */}
-
-      <PopularCoupons />
-
-      {/* =====================================================
-          LATEST COUPONS
-      ===================================================== */}
-
-      <section
+      <div
         className="
-          mt-10
+          mx-auto
           w-full
-          sm:mt-12
+          max-w-6xl
+          px-4
+          sm:px-6
+          lg:px-8
         "
       >
         {/* ===================================================
-            HEADER
+            HERO
         =================================================== */}
 
-        <div
-          className="
-            mb-5
-            flex
-            items-end
-            justify-between
-            gap-4
-            sm:mb-6
-          "
-        >
-          <div className="min-w-0">
-            <h2
-              className="
-                text-xl
-                font-extrabold
-                tracking-tight
-                text-gray-900
-                sm:text-2xl
-              "
-            >
-              Latest Coupons
-            </h2>
-
-            <p
-              className="
-                mt-1
-                text-xs
-                leading-5
-                text-gray-500
-                sm:text-sm
-              "
-            >
-              Fresh coupon codes and deals added recently
-            </p>
-          </div>
-
-          {/* UPDATED STATUS */}
-
-          <div
-            className="
-              hidden
-              shrink-0
-              items-center
-              gap-2
-              sm:flex
-            "
-          >
-            <span
-              className="
-                h-2
-                w-2
-                rounded-full
-                bg-emerald-500
-              "
-            />
-
-            <span
-              className="
-                text-xs
-                font-semibold
-                text-gray-500
-              "
-            >
-              Updated today
-            </span>
-          </div>
-        </div>
+        <section className="pt-4 sm:pt-6 lg:pt-8">
+          <Hero coupons={activeCoupons} stats={heroStats} />
+        </section>
 
         {/* ===================================================
-            COUPON GRID
+            FEATURED
         =================================================== */}
 
-        {latestCoupons.length > 0 ? (
-          <div
-            className="
-              grid
-              w-full
-              grid-cols-1
-              items-stretch
-              gap-4
-              sm:grid-cols-2
-              sm:gap-5
-              lg:grid-cols-3
-            "
-          >
-            {latestCoupons.map((coupon) => (
-              <div
-                key={coupon.id}
-                className="
-                  min-w-0
-                  w-full
-                  max-w-full
-                "
-              >
-                <CouponCard coupon={coupon} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div
-            className="
-              rounded-2xl
-              border
-              border-gray-200
-              bg-white
-              px-5
-              py-12
-              text-center
-              text-sm
-              text-gray-500
-              shadow-sm
-            "
-          >
-            No active coupons available right now.
-          </div>
-        )}
-      </section>
+        <section className="mt-8 sm:mt-10 lg:mt-12">
+          <FeaturedCoupons />
+        </section>
+
+        {/* ===================================================
+            POPULAR
+        =================================================== */}
+
+        <section className="mt-8 sm:mt-10 lg:mt-12">
+          <PopularCoupons />
+        </section>
+
+        {/* ===================================================
+            TRENDING
+        =================================================== */}
+
+        <section className="mt-8 sm:mt-10 lg:mt-12">
+          <TrendingCoupons />
+        </section>
+
+        {/* ===================================================
+            LATEST
+        =================================================== */}
+
+        <section className="mt-8 pb-8 sm:mt-10 sm:pb-12 lg:mt-12 lg:pb-16">
+          <LatestCoupons />
+        </section>
+      </div>
     </main>
   );
 }
