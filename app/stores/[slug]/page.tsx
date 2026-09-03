@@ -726,6 +726,26 @@ export default async function StorePage({
           the available coupon code at checkout to save money.
         </p>
       </section>
+
+      {/* Related Articles */}
+
+      <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-6">
+        <h2 className="text-xl font-black text-slate-900">Related Articles</h2>
+
+        <div className="mt-4">
+          <Link
+            href="/blog/best-nike-promo-codes-september-2026"
+            className="text-emerald-600 font-bold hover:underline"
+          >
+            Best Nike Promo Codes September 2026
+          </Link>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Discover the latest Nike discounts, savings tips, and promotional
+            offers.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
