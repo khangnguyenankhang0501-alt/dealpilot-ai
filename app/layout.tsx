@@ -9,8 +9,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ),
+
   title: "DealPilot - Best Coupon Codes & Deals",
+
   description: "Find the best coupon codes, promo codes, and daily deals.",
+
+  verification: {
+    google: GOOGLE_VERIFICATION_CODE,
+  },
 };
 
 export default function RootLayout({
