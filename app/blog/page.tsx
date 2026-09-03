@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "DealPilot Blog | Coupons, Deals & Saving Tips",
   description:
     "Read the latest shopping tips, coupon guides, money-saving ideas, and deal recommendations on DealPilot.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 export default async function BlogPage() {
@@ -225,12 +228,3 @@ export default async function BlogPage() {
     </main>
   );
 }
-
-export const metadata: Metadata = {
-  title: "DealPilot Blog | Coupons, Deals & Saving Tips",
-  description:
-    "Read the latest shopping tips, coupon guides, money-saving ideas, and deal recommendations on DealPilot.",
-  alternates: {
-    canonical: "/blog",
-  },
-};
