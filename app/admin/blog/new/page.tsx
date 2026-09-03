@@ -13,6 +13,78 @@ function slugify(text: string) {
     .replace(/-+/g, "-");
 }
 
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function textToHtml(text: string) {
+  const lines = text.split(/\r?\n/);
+
+  const html: string[] = [];
+  let listItems: string[] = [];
+
+  const closeList = () => {
+    if (listItems.length > 0) {
+      html.push("<ul>");
+      html.push(...listItems);
+      html.push("</ul>");
+      listItems = [];
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      closeList();
+      continue;
+    }
+
+    if (line.startsWith("### ")) {
+      closeList();
+      html.push("<h3>" + escapeHtml(line.slice(4)) + "</h3>");
+      continue;
+    }
+
+    if (line.startsWith("## ")) {
+      closeList();
+      html.push("<h2>" + escapeHtml(line.slice(3)) + "</h2>");
+      continue;
+    }
+
+    if (line.startsWith("# ")) {
+      closeList();
+      html.push("<h2>" + escapeHtml(line.slice(2)) + "</h2>");
+      continue;
+    }
+
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      listItems.push("<li>" + escapeHtml(line.slice(2)) + "</li>");
+      continue;
+    }
+
+    closeList();
+
+    const escaped = escapeHtml(line);
+
+    const linked = escaped.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+    );
+
+    html.push("<p>" + linked + "</p>");
+  }
+
+  closeList();
+
+  return html.join("\n");
+}
+
 async function createPost(formData: FormData) {
   "use server";
 
@@ -21,14 +93,14 @@ async function createPost(formData: FormData) {
   const excerpt = String(formData.get("excerpt") || "").trim();
   const category = String(formData.get("category") || "").trim();
   const storeSlug = String(formData.get("store_slug") || "").trim();
-  const content = String(formData.get("content") || "").trim();
+  const contentText = String(formData.get("content") || "").trim();
 
   if (!title) {
     throw new Error("Title is required.");
   }
 
-  if (!content) {
-    throw new Error("Content is required.");
+  if (!contentText) {
+    throw new Error("Article content is required.");
   }
 
   const slug = slugify(slugInput || title);
@@ -54,6 +126,8 @@ async function createPost(formData: FormData) {
       "This slug already exists. Please choose a different slug.",
     );
   }
+
+  const content = textToHtml(contentText);
 
   const { data: newPost, error: insertError } = await supabase
     .from("posts")
@@ -95,7 +169,7 @@ export default async function NewBlogPostPage() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Create and publish a new DealPilot article.
+            Write your article normally and publish it directly to DealPilot.
           </p>
         </div>
 
@@ -107,10 +181,8 @@ export default async function NewBlogPostPage() {
         </Link>
       </div>
 
-      {/* FORM */}
-
       <form action={createPost} className="space-y-6">
-        {/* BASIC INFORMATION */}
+        {/* ARTICLE INFORMATION */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6">
@@ -158,12 +230,12 @@ export default async function NewBlogPostPage() {
                 id="slug"
                 name="slug"
                 type="text"
-                placeholder="best-nike-promo-codes-september-2026"
+                placeholder="Leave blank to generate automatically"
                 className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 font-mono text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
 
               <p className="mt-2 text-xs text-slate-400">
-                Leave blank to generate the slug automatically from the title.
+                Example: best-nike-promo-codes-september-2026
               </p>
             </div>
 
@@ -181,7 +253,7 @@ export default async function NewBlogPostPage() {
                 id="excerpt"
                 name="excerpt"
                 rows={4}
-                placeholder="Discover the best Nike promo codes, discounts, and money-saving tips available this month."
+                placeholder="Write a short summary of the article..."
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               />
             </div>
@@ -223,14 +295,14 @@ export default async function NewBlogPostPage() {
                 />
 
                 <p className="mt-2 text-xs text-slate-400">
-                  Example: Nike, Walmart, Target.
+                  Example: Nike, Walmart, Target
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CONTENT */}
+        {/* ARTICLE CONTENT */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6">
@@ -238,9 +310,9 @@ export default async function NewBlogPostPage() {
               Article Content
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Write the article using HTML headings, paragraphs, links, and
-              lists.
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              Just write your article normally. You do not need to write HTML or
+              code.
             </p>
           </div>
 
@@ -249,7 +321,7 @@ export default async function NewBlogPostPage() {
               htmlFor="content"
               className="mb-2 block text-sm font-bold text-slate-700"
             >
-              Content *
+              Article *
             </label>
 
             <textarea
@@ -257,32 +329,32 @@ export default async function NewBlogPostPage() {
               name="content"
               required
               rows={24}
-              placeholder={`<h2>Best Nike Promo Codes for September 2026</h2>
+              placeholder={`Write your article here...
 
-<p>Looking for ways to save money on Nike products? Check these offers before checkout.</p>
+Best Nike Promo Codes for September 2026
 
-<h3>How to Save at Nike</h3>
+Looking for ways to save money when shopping at Nike? Here are some useful tips and offers to check before checkout.
 
-<ul>
-  <li>Check available Nike promo codes.</li>
-  <li>Look for seasonal discounts.</li>
-  <li>Compare offers before checkout.</li>
-</ul>
+How to Save at Nike
 
-<h3>More Nike Deals</h3>
+- Check the latest Nike promo codes.
+- Look for seasonal discounts.
+- Compare current offers before buying.
 
-<p>
-  Browse the latest
-  <a href="/stores/Nike">Nike coupons and deals</a>
-  on DealPilot.
-</p>`}
-              className="min-h-130 w-full rounded-xl border border-slate-200 bg-slate-950 px-4 py-4 font-mono text-sm leading-6 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+More Nike Deals
+
+Visit the Nike store page on DealPilot to find more available coupons and deals.`}
+              className="min-h-130 w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
 
-            <p className="mt-2 text-xs leading-5 text-slate-400">
-              HTML is supported because the blog detail page currently renders
-              the post content as HTML.
-            </p>
+            <div className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
+              <strong className="text-slate-700">Writing tips:</strong> Use
+              blank lines between paragraphs. Start headings with
+              <strong> # </strong>
+              or
+              <strong> ## </strong>. Start bullet points with
+              <strong> - </strong>.
+            </div>
           </div>
         </section>
 
@@ -296,9 +368,7 @@ export default async function NewBlogPostPage() {
               </h2>
 
               <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-                Clicking Publish will save this article directly to the
-                <strong> posts </strong>
-                table and make it available on the DealPilot blog.
+                Click Publish to save the article to the DealPilot blog.
               </p>
             </div>
 
