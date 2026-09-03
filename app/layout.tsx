@@ -7,7 +7,7 @@ const GOOGLE_VERIFICATION_CODE = "Mx8Le7PD8lABdaKRcpNr55g0Ncs7XjqZ6bfsOpCgmk";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://dealpilot-ai-iota.vercel.app",
   ),
 
   title: "DealPilot - Best Coupon Codes & Deals",
@@ -16,6 +16,10 @@ export const metadata: Metadata = {
 
   verification: {
     google: GOOGLE_VERIFICATION_CODE,
+  },
+
+  alternates: {
+    canonical: "/",
   },
 };
 
