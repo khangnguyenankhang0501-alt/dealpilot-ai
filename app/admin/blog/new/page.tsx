@@ -95,6 +95,8 @@ async function createPost(formData: FormData) {
   const storeSlug = String(formData.get("store_slug") || "").trim();
   const contentText = String(formData.get("content") || "").trim();
 
+  const image = formData.get("image");
+
   if (!title) {
     throw new Error("Title is required.");
   }
@@ -127,6 +129,49 @@ async function createPost(formData: FormData) {
     );
   }
 
+  let imageUrl: string | null = null;
+
+  if (image instanceof File && image.size > 0) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+    if (!allowedTypes.includes(image.type)) {
+      throw new Error("Only JPG, PNG, WEBP, and GIF images are allowed.");
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (image.size > maxSize) {
+      throw new Error("Image is too large. Maximum size is 5MB.");
+    }
+
+    const extension = image.name.split(".").pop()?.toLowerCase() || "jpg";
+
+    const fileName = slug + "-" + Date.now() + "." + extension;
+
+    const filePath = "posts/" + fileName;
+
+    const { error: uploadError } = await supabase.storage
+      .from("blog-images")
+      .upload(filePath, image, {
+        contentType: image.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading blog image:", uploadError);
+
+      throw new Error(
+        "Could not upload the blog image: " + uploadError.message,
+      );
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("blog-images")
+      .getPublicUrl(filePath);
+
+    imageUrl = publicUrlData.publicUrl;
+  }
+
   const content = textToHtml(contentText);
 
   const { data: newPost, error: insertError } = await supabase
@@ -138,6 +183,7 @@ async function createPost(formData: FormData) {
       excerpt: excerpt || null,
       category: category || null,
       store_slug: storeSlug || null,
+      image_url: imageUrl,
     })
     .select("id, slug")
     .single();
@@ -155,7 +201,7 @@ async function createPost(formData: FormData) {
   redirect("/blog/" + newPost.slug);
 }
 
-export default async function NewBlogPostPage() {
+export default function NewBlogPostPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       {/* HEADER */}
@@ -169,7 +215,8 @@ export default async function NewBlogPostPage() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Write your article normally and publish it directly to DealPilot.
+            Write your article, add an image, and publish it directly to
+            DealPilot.
           </p>
         </div>
 
@@ -181,7 +228,11 @@ export default async function NewBlogPostPage() {
         </Link>
       </div>
 
-      <form action={createPost} className="space-y-6">
+      <form
+        action={createPost}
+        encType="multipart/form-data"
+        className="space-y-6"
+      >
         {/* ARTICLE INFORMATION */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
@@ -302,6 +353,51 @@ export default async function NewBlogPostPage() {
           </div>
         </section>
 
+        {/* FEATURED IMAGE */}
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="mb-6">
+            <h2 className="text-xl font-black text-slate-900">
+              Featured Image
+            </h2>
+
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              Upload an image for the article. JPG, PNG, WEBP, and GIF are
+              supported. Maximum size: 5MB.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="image"
+              className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition hover:border-emerald-400 hover:bg-emerald-50"
+            >
+              <span className="text-4xl">🖼️</span>
+
+              <span className="mt-3 text-sm font-black text-slate-800">
+                Choose an image
+              </span>
+
+              <span className="mt-1 text-xs text-slate-500">
+                Click here to select an image from your computer
+              </span>
+
+              <input
+                id="image"
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+              />
+            </label>
+
+            <p className="mt-3 text-xs leading-5 text-slate-400">
+              This image will be uploaded to Supabase Storage and saved with the
+              article.
+            </p>
+          </div>
+        </section>
+
         {/* ARTICLE CONTENT */}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
@@ -368,7 +464,8 @@ Visit the Nike store page on DealPilot to find more available coupons and deals.
               </h2>
 
               <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-                Click Publish to save the article to the DealPilot blog.
+                Click Publish to upload the image, save the article, and make it
+                available on the DealPilot blog.
               </p>
             </div>
 
