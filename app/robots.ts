@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://dealpilot-ai-iota.vercel.app";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://dealpilot-ai-iota.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin/", "/api/"],
     },
-    sitemap: `${SITE_URL}/sitemap.xml`,
+
+    sitemap: SITE_URL + "/sitemap.xml",
   };
 }

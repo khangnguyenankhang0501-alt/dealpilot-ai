@@ -1,4 +1,3 @@
-```tsx
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -8,8 +7,12 @@ import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
 
 interface StorePageProps {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  params: Promise<{
+    slug: string;
+  }>;
+  searchParams?: Promise<{
+    page?: string;
+  }>;
 }
 
 export const revalidate = 0;
@@ -44,7 +47,7 @@ export async function generateMetadata({
     title: storeName + " Coupons & Promo Codes | DealPilot",
     description,
     alternates: {
-      canonical: "/stores/" + slug,
+      canonical: "https://dealpilot.com/stores/" + slug,
     },
   };
 }
@@ -54,7 +57,7 @@ export default async function StorePage({
   searchParams,
 }: StorePageProps) {
   const { slug } = await params;
-  const { page } = await searchParams;
+  const { page } = searchParams ? await searchParams : {};
 
   const storeNameFromSlug = formatStoreName(slug);
 
@@ -308,9 +311,7 @@ export default async function StorePage({
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">
-              Updated
-            </span>
+            <span className="text-xs font-bold text-slate-500">Updated</span>
 
             <span className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50">
               <span className="absolute h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400 opacity-50" />
@@ -348,10 +349,7 @@ export default async function StorePage({
         {coupons && coupons.length > 0 ? (
           <div className="grid w-full grid-cols-1 items-stretch gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
             {coupons.map((coupon) => (
-              <div
-                key={coupon.id}
-                className="flex min-w-0 w-full max-w-full"
-              >
+              <div key={coupon.id} className="flex min-w-0 w-full max-w-full">
                 <CouponCard coupon={coupon} />
               </div>
             ))}
@@ -387,12 +385,7 @@ export default async function StorePage({
         >
           {currentPage > 1 && (
             <Link
-              href={
-                "/stores/" +
-                slug +
-                "?page=" +
-                (currentPage - 1)
-              }
+              href={"/stores/" + slug + "?page=" + (currentPage - 1)}
               className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
             >
               ←
@@ -405,17 +398,8 @@ export default async function StorePage({
             return (
               <Link
                 key={pageNumber}
-                href={
-                  "/stores/" +
-                  slug +
-                  "?page=" +
-                  pageNumber
-                }
-                aria-current={
-                  currentPage === pageNumber
-                    ? "page"
-                    : undefined
-                }
+                href={"/stores/" + slug + "?page=" + pageNumber}
+                aria-current={currentPage === pageNumber ? "page" : undefined}
                 className={
                   "inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-xs font-black shadow-sm transition sm:text-sm " +
                   (currentPage === pageNumber
@@ -430,12 +414,7 @@ export default async function StorePage({
 
           {currentPage < totalPages && (
             <Link
-              href={
-                "/stores/" +
-                slug +
-                "?page=" +
-                (currentPage + 1)
-              }
+              href={"/stores/" + slug + "?page=" + (currentPage + 1)}
               className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
             >
               →
@@ -452,9 +431,9 @@ export default async function StorePage({
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Find the latest {storeName} promo codes, coupon codes, discounts,
-          and deals on DealPilot. Browse active offers, compare discounts,
-          and use the available coupon code at checkout to save money.
+          Find the latest {storeName} promo codes, coupon codes, discounts, and
+          deals on DealPilot. Browse active offers, compare discounts, and use
+          the available coupon code at checkout to save money.
         </p>
       </section>
 
@@ -477,9 +456,7 @@ export default async function StorePage({
                 </Link>
 
                 {post.excerpt && (
-                  <p className="mt-1 text-sm text-slate-500">
-                    {post.excerpt}
-                  </p>
+                  <p className="mt-1 text-sm text-slate-500">{post.excerpt}</p>
                 )}
               </div>
             ))}
@@ -518,4 +495,3 @@ export default async function StorePage({
     </main>
   );
 }
-```;

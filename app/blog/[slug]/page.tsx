@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import { supabase } from "@/lib/supabaseClient";
 
 export const revalidate = 0;
@@ -11,30 +12,18 @@ type PageProps = {
   }>;
 };
 
+const SITE_URL = "https://dealpilot-ai-iota.vercel.app";
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const { data: post, error } = await supabase
+  const { data: post } = await supabase
     .from("posts")
-    .select("*")
+    .select("title, slug, excerpt, seo_title, seo_description")
     .eq("slug", slug)
     .maybeSingle();
-
-  console.log("========== METADATA ==========");
-  console.log("SLUG:", slug);
-  console.log("POST:", post);
-  console.log("ERROR:", error);
-  console.log("==============================");
-
-  console.log("META SLUG:", slug);
-  console.log("META POST:", post);
-  console.log("META ERROR:", error);
-
-  console.log("BLOG SLUG:", slug);
-  console.log("BLOG POST:", post);
-  console.log("BLOG ERROR:", error);
 
   if (!post) {
     return {
@@ -43,25 +32,37 @@ export async function generateMetadata({
     };
   }
 
+  const title = post.seo_title || post.title;
+
+  const description = post.seo_description || post.excerpt || "";
+
   return {
-    title: post.seo_title || post.title,
-    description: post.seo_description || post.excerpt,
+    title,
+
+    description,
 
     alternates: {
-      canonical: `/blog/${post.slug}`,
+      canonical: `${SITE_URL}/blog/${post.slug}`,
     },
 
     openGraph: {
-      title: post.seo_title || post.title,
-      description: post.seo_description || post.excerpt,
+      title,
+
+      description,
+
       type: "article",
-      url: `https://dealpilot-ai-iota.vercel.app/blog/${post.slug}`,
+
+      url: `${SITE_URL}/blog/${post.slug}`,
+
+      siteName: "DealPilot",
     },
 
     twitter: {
       card: "summary_large_image",
-      title: post.seo_title || post.title,
-      description: post.seo_description || post.excerpt,
+
+      title,
+
+      description,
     },
   };
 }
@@ -75,14 +76,8 @@ export default async function BlogPostPage({ params }: PageProps) {
     .eq("slug", slug)
     .maybeSingle();
 
-  console.log("=========== PAGE ===========");
-  console.log("SLUG:", slug);
-  console.log("POST:", post);
-  console.log("ERROR:", error);
-  console.log("============================");
-
   if (error) {
-    throw new Error(JSON.stringify(error));
+    console.error("Blog fetch error:", error);
   }
 
   if (!post) {
@@ -91,22 +86,33 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const articleSchema = {
     "@context": "https://schema.org",
+
     "@type": "Article",
+
     headline: post.title,
+
     description: post.excerpt,
+
     datePublished: post.created_at,
-    dateModified: post.created_at,
+
+    dateModified: post.updated_at || post.created_at,
+
     author: {
       "@type": "Organization",
+
       name: "DealPilot",
     },
+
     publisher: {
       "@type": "Organization",
+
       name: "DealPilot",
     },
+
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://dealpilot-ai-iota.vercel.app/blog/${post.slug}`,
+
+      "@id": `${SITE_URL}/blog/${post.slug}`,
     },
   };
 
@@ -126,7 +132,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         ← Back to Blog
       </Link>
 
-      <article className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
+      <article className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8_30px_rgba(15,23,42,0.05)]">
         <div className="px-5 py-7 sm:px-8 sm:py-10 lg:px-12">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-600">
@@ -173,7 +179,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/coupons"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.20)] transition hover:-translate-y-0.5 hover:bg-emerald-400"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-500 px-5 text-sm font-black text-white shadow-[0_8_20px_rgba(16,185,129,0.20)] transition hover:-translate-y-0.5 hover:bg-emerald-400"
           >
             Browse Coupons →
           </Link>
