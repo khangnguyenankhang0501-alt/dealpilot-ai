@@ -1,84 +1,105 @@
-import Link from "next/link";
+import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
 
 export const revalidate = 0;
 
 export default async function FeaturedCoupons() {
-  // Lấy ngày hiện tại chuẩn YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0];
 
-  // 1. Lấy tất cả coupon có trạng thái Active từ Supabase
-  const { data: allCoupons, error } = await supabase
+  const { data: coupons, error } = await supabase
     .from("coupons")
-    .select("*")
-    .eq("status", "Active");
+    .select(
+      `
+        *,
+        stores!coupons_store_id_fkey (
+          id,
+          name,
+          slug,
+          logo_url
+        )
+      `,
+    )
+    .eq("status", "Active")
+    .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .order("click_count", {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .limit(10);
 
   if (error) {
-    console.error("Failed to load featured coupons:", error);
-    return null;
+    console.error("Error fetching featured coupons:", error);
   }
 
-  // 2. Lọc bỏ các coupon đã quá hạn bằng JavaScript
-  const validCoupons =
-    allCoupons?.filter((coupon) => {
-      if (!coupon.expires_at) return true; // Không có ngày hết hạn thì giữ lại
-      return coupon.expires_at >= today; // Có ngày hết hạn thì phải từ hôm nay trở đi mới giữ lại
-    }) || [];
-
-  // 3. Sắp xếp theo số lượt click giảm dần và giới hạn tối đa 6 coupon
-  validCoupons.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
-  const popularCoupons = validCoupons.slice(0, 6);
-
-  if (!popularCoupons || popularCoupons.length === 0) {
+  if (!coupons || coupons.length === 0) {
     return null;
   }
 
   return (
-    <section className="mb-12">
-      <h2 className="text-3xl font-bold mb-6">Popular Coupons</h2>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {popularCoupons.map((coupon) => (
+    <section className="my-8 w-full sm:my-10">
+      {/* HEADER */}
+      <div className="mb-4 flex items-end justify-between gap-3 sm:mb-5">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+            <span className="text-lg sm:text-xl">⭐</span>
+            <span>Featured Coupons</span>
+          </h2>
+
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            Hand-picked coupon codes and offers
+          </p>
+        </div>
+
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+
+          <span className="text-xs font-semibold text-slate-500">
+            Updated today
+          </span>
+        </div>
+      </div>
+
+      {/* HORIZONTAL COUPON SCROLLER */}
+      <div
+        className="
+          popular-coupons-scroll
+          flex
+          w-full
+          gap-4
+          overflow-x-auto
+          overflow-y-hidden
+          pb-4
+          pt-1
+          snap-x
+          snap-mandatory
+          scroll-smooth
+          overscroll-x-contain
+          touch-pan-x
+          [-webkit-overflow-scrolling:touch]
+          [scrollbar-width:auto]
+          [&::-webkit-scrollbar]:h-2
+          [&::-webkit-scrollbar-track]:rounded-full
+          [&::-webkit-scrollbar-track]:bg-gray-100
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          [&::-webkit-scrollbar-thumb]:bg-gray-300
+          hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
+        "
+      >
+        {coupons.map((coupon) => (
           <div
             key={coupon.id}
-            className="border rounded-xl p-5 shadow-sm hover:shadow-lg transition flex flex-col justify-between"
+            className="
+              w-[270px]
+              min-w-[270px]
+              max-w-[270px]
+              shrink-0
+              snap-start
+              sm:w-[290px]
+              sm:min-w-[290px]
+              sm:max-w-[290px]
+            "
           >
-            <div>
-              <Link href={`/coupons/${coupon.slug || "#"}`}>
-                <h3 className="text-xl font-semibold mb-2 hover:text-blue-600 transition">
-                  {coupon.title || "No Title"}
-                </h3>
-              </Link>
-
-              {coupon.store_name && (
-                <p className="text-gray-500 mb-3">
-                  <Link
-                    href={`/stores/${coupon.store_name.toLowerCase()}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {coupon.store_name}
-                  </Link>
-                </p>
-              )}
-
-              {coupon.coupon_code && (
-                <div className="mt-3 bg-green-100 text-green-700 font-bold px-3 py-1 rounded inline-block">
-                  {coupon.coupon_code}
-                </div>
-              )}
-
-              <p className="text-sm text-gray-500 mt-3">
-                Expires: {coupon.expires_at || "N/A"}
-              </p>
-            </div>
-
-            <div className="mt-4">
-              <Link
-                href={`/coupons/${coupon.slug || "#"}`}
-                className="block bg-black text-white text-center py-2 rounded-lg hover:bg-gray-800 transition"
-              >
-                View Coupon
-              </Link>
-            </div>
+            <CouponCard coupon={coupon} />
           </div>
         ))}
       </div>

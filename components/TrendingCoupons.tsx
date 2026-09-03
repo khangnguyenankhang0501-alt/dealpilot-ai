@@ -1,25 +1,120 @@
-import Link from "next/link";
+import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
 
+export const revalidate = 0;
+
 export default async function TrendingCoupons() {
-  const { data: coupons } = await supabase.from("coupons").select("*").limit(6);
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data: coupons, error } = await supabase
+    .from("coupons")
+    .select(
+      `
+        *,
+        stores!coupons_store_id_fkey (
+          id,
+          name,
+          slug,
+          logo_url
+        )
+      `,
+    )
+    .eq("status", "Active")
+    .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .order("click_count", {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .limit(10);
+
+  if (error) {
+    console.error("Error fetching trending coupons:", error);
+  }
+
+  if (!coupons || coupons.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-16">
-      <h2 className="text-3xl font-bold mb-8">Trending Coupons</h2>
+    <section className="my-8 w-full sm:my-10">
+      {/* HEADER */}
+      <div className="mb-4 flex items-end justify-between gap-3 sm:mb-5">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+            <span className="text-lg sm:text-xl">🔥</span>
+            <span>Trending Coupons</span>
+          </h2>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {coupons?.map((coupon) => (
-          <Link
+          <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+            Coupons getting the most attention right now
+          </p>
+        </div>
+
+        {/* STATUS */}
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+
+          <span className="text-xs font-semibold text-slate-500">
+            Trending now
+          </span>
+        </div>
+      </div>
+
+      {/* HORIZONTAL SCROLLER */}
+      <div
+        className="
+          trending-coupons-scroll
+          flex
+          w-full
+          gap-4
+          overflow-x-auto
+          overflow-y-hidden
+          pb-4
+          pt-1
+          snap-x
+          snap-mandatory
+          scroll-smooth
+          overscroll-x-contain
+          touch-pan-x
+          [-webkit-overflow-scrolling:touch]
+
+          [scrollbar-width:auto]
+
+          [&::-webkit-scrollbar]:h-2
+          [&::-webkit-scrollbar-track]:rounded-full
+          [&::-webkit-scrollbar-track]:bg-gray-100
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          [&::-webkit-scrollbar-thumb]:bg-gray-300
+          hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
+
+          sm:gap-5
+        "
+      >
+        {coupons.map((coupon) => (
+          <div
             key={coupon.id}
-            href={`/coupons/${coupon.slug}`}
-            className="border rounded-xl p-6"
-          >
-            <h3 className="font-bold">{coupon.title}</h3>
+            className="
+              w-[270px]
+              min-w-[270px]
+              max-w-[270px]
+              shrink-0
+              snap-start
 
-            <p className="text-green-600 mt-2">{coupon.discount}</p>
-          </Link>
+              sm:w-[290px]
+              sm:min-w-[290px]
+              sm:max-w-[290px]
+            "
+          >
+            <CouponCard coupon={coupon} />
+          </div>
         ))}
+      </div>
+
+      {/* MOBILE HINT */}
+      <div className="mt-1 text-center sm:hidden">
+        <span className="text-[11px] font-medium text-slate-400">
+          ← Swipe to explore more →
+        </span>
       </div>
     </section>
   );

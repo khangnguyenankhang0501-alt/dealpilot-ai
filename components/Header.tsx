@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import SavedLink from "@/components/SavedLink";
@@ -8,27 +9,102 @@ import SavedLink from "@/components/SavedLink";
 type SearchResult = {
   title: string;
   slug: string;
-  store_name: string;
+  store_name: string | null;
 };
+
+const mainNavigation = [
+  {
+    label: "Stores",
+    href: "/stores",
+  },
+  {
+    label: "Coupons",
+    href: "/coupons",
+  },
+  {
+    label: "Deals",
+    href: "/deals",
+  },
+  {
+    label: "Categories",
+    href: "/categories",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+  },
+];
+
+const secondaryNavigation = [
+  {
+    label: "🔥 Trending Now",
+    href: "/trending",
+  },
+  {
+    label: "💎 Top Brands",
+    href: "/top-brands",
+  },
+  {
+    label: "🏷️ Promo Codes",
+    href: "/promo-codes",
+  },
+  {
+    label: "School Supplies",
+    href: "/categories/school-supplies",
+  },
+  {
+    label: "Over 50% Off",
+    href: "/deals/50-off",
+  },
+  {
+    label: "Furniture",
+    href: "/categories/furniture",
+  },
+  {
+    label: "Beauty",
+    href: "/categories/beauty",
+  },
+  {
+    label: "Household",
+    href: "/categories/household",
+  },
+];
 
 export default function Header() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   useEffect(() => {
+    const searchQuery = query.trim();
+
+    if (!searchQuery) {
+      setResults([]);
+      return;
+    }
+
     const fetchResults = async () => {
-      if (!query) {
+      const safeQuery = searchQuery.replace(/[%_,]/g, "");
+
+      if (!safeQuery) {
         setResults([]);
         return;
       }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("coupons")
         .select("title, slug, store_name")
-        .or(`title.ilike.%${query}%,store_name.ilike.%${query}%`)
-        .limit(5);
+        .or(`title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%`)
+        .limit(6);
 
-      setResults(data || []);
+      if (error) {
+        console.error("Search error:", error);
+        setResults([]);
+        return;
+      }
+
+      setResults(data ?? []);
     };
 
     const timer = setTimeout(fetchResults, 300);
@@ -36,151 +112,287 @@ export default function Header() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const clearSearch = () => {
+    setQuery("");
+    setResults([]);
+  };
+
   return (
-    <header className="bg-white relative z-10 border-b">
-      {/* Top Header: Logo, Search Bar, Saved Link & Sign In */}
-      <div className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
-          <Link href="/">
-            <h1 className="text-2xl font-bold">
-              Deal<span className="text-green-600">Pilot</span>
-            </h1>
+    <header className="relative z-50 w-full border-b border-slate-200 bg-white">
+      {/* =====================================================
+            DESKTOP / TABLET HEADER
+        ====================================================== */}
+
+      <div className="hidden md:block">
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
+          <div className="flex min-h-[70px] items-center gap-5">
+            {/* LOGO */}
+
+            <Link href="/" className="shrink-0" aria-label="DealPilot Home">
+              <span className="text-[22px] font-extrabold tracking-tight text-slate-900">
+                Deal<span className="text-emerald-500">Pilot</span>
+              </span>
+            </Link>
+
+            {/* DESKTOP SEARCH */}
+
+            <div className="relative min-w-0 flex-1 max-w-[440px]">
+              <div
+                className={`flex h-10 items-center rounded-full border bg-white transition ${
+                  searchFocused
+                    ? "border-emerald-500 ring-2 ring-emerald-500/10"
+                    : "border-slate-300"
+                }`}
+              >
+                <span className="pl-4 text-sm text-slate-400">🔍</span>
+
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => {
+                    setTimeout(() => setSearchFocused(false), 150);
+                  }}
+                  placeholder="Search coupons, stores..."
+                  className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                  aria-label="Search coupons and stores"
+                />
+
+                {query && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* SEARCH RESULTS */}
+
+              {results.length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                  {results.map((item, index) => (
+                    <Link
+                      key={`${item.slug}-${index}`}
+                      href={`/coupons/${item.slug}`}
+                      onClick={clearSearch}
+                      className="block border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
+                    >
+                      <div className="truncate text-sm font-semibold text-slate-900">
+                        {item.title}
+                      </div>
+
+                      <div className="mt-0.5 truncate text-xs text-slate-500">
+                        {item.store_name || "Store"}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* MAIN NAVIGATION */}
+
+            <nav className="ml-auto flex shrink-0 items-center gap-4 text-sm font-medium text-slate-700 lg:gap-5">
+              {mainNavigation.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="whitespace-nowrap transition-colors hover:text-emerald-600"
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              <SavedLink />
+            </nav>
+          </div>
+        </div>
+
+        {/* SECONDARY NAVIGATION */}
+
+        <div className="border-t border-slate-100 bg-slate-50/60">
+          <nav className="mx-auto flex w-full max-w-6xl items-center gap-x-7 overflow-x-auto px-4 py-2.5 text-xs font-medium text-slate-600 lg:px-6 lg:text-sm">
+            {secondaryNavigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="shrink-0 whitespace-nowrap transition-colors hover:text-emerald-600"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* =====================================================
+            MOBILE HEADER
+        ====================================================== */}
+
+      <div className="md:hidden">
+        {/* TOP ROW */}
+
+        <div className="flex h-16 items-center justify-between px-4">
+          {/* LOGO */}
+
+          <Link
+            href="/"
+            onClick={closeMobileMenu}
+            aria-label="DealPilot Home"
+            className="shrink-0"
+          >
+            <span className="text-[21px] font-extrabold tracking-tight text-slate-900">
+              Deal<span className="text-emerald-500">Pilot</span>
+            </span>
           </Link>
 
-          {/* Search Box with Autocomplete */}
-          <div className="flex-1 max-w-lg relative hidden md:block mx-4">
+          {/* MOBILE ACTIONS */}
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/saved"
+              onClick={closeMobileMenu}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-lg text-slate-700 transition hover:bg-slate-100"
+              aria-label="Saved coupons"
+            >
+              ♡
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl text-slate-800 shadow-sm"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? "×" : "☰"}
+            </button>
+          </div>
+        </div>
+
+        {/* MOBILE SEARCH */}
+
+        <div className="px-4 pb-3">
+          <div
+            className={`flex h-11 items-center rounded-full border bg-white transition ${
+              searchFocused
+                ? "border-emerald-500 ring-2 ring-emerald-500/10"
+                : "border-slate-300"
+            }`}
+          >
+            <span className="pl-4 text-sm text-slate-400">🔍</span>
+
             <input
-              type="text"
+              type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => {
+                setTimeout(() => setSearchFocused(false), 150);
+              }}
               placeholder="Search coupons, stores..."
-              className="w-full border rounded-full px-4 py-2 outline-none focus:ring-1 focus:ring-green-500"
+              className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              aria-label="Search coupons and stores"
             />
 
-            {results.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
+            {query && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm text-slate-400 hover:bg-slate-100"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* MOBILE SEARCH RESULTS */}
+
+          {results.length > 0 && (
+            <div className="relative z-50">
+              <div className="absolute left-0 right-0 top-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                 {results.map((item, index) => (
                   <Link
                     key={`${item.slug}-${index}`}
                     href={`/coupons/${item.slug}`}
-                    onClick={() => {
-                      setQuery("");
-                      setResults([]);
-                    }}
-                    className="block px-4 py-3 hover:bg-gray-50 border-b last:border-none"
+                    onClick={clearSearch}
+                    className="block border-b border-slate-100 px-4 py-3 last:border-b-0 hover:bg-slate-50"
                   >
-                    <div className="font-medium">{item.title}</div>
-                    <div className="text-sm text-gray-500">
-                      {item.store_name}
+                    <div className="truncate text-sm font-semibold text-slate-900">
+                      {item.title}
+                    </div>
+
+                    <div className="mt-0.5 truncate text-xs text-slate-500">
+                      {item.store_name || "Store"}
                     </div>
                   </Link>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Navigation Links & Sign In */}
-          <div className="flex items-center gap-6 shrink-0">
-            <nav className="hidden md:flex items-center gap-6 font-medium">
-              <Link
-                href="/stores"
-                className="hover:text-green-600 transition-colors"
-              >
-                Stores
-              </Link>
-              <Link
-                href="/coupons"
-                className="hover:text-green-600 transition-colors"
-              >
-                Coupons
-              </Link>
-              <Link
-                href="/deals"
-                className="hover:text-green-600 transition-colors"
-              >
-                Deals
-              </Link>
-              <Link
-                href="/categories"
-                className="hover:text-green-600 transition-colors"
-              >
-                Categories
-              </Link>
-              <Link
-                href="/blog"
-                className="hover:text-green-600 transition-colors"
-              >
-                Blog
-              </Link>
-
-              {/* Component SavedLink hiển thị dynamic badge số lượng đã lưu */}
-              <SavedLink />
-            </nav>
-
-            <div className="hidden md:block w-px h-6 bg-gray-300 mx-2" />
-
-            <Link
-              href="/login"
-              className="font-medium hover:text-green-600 transition-colors"
-            >
-              Sign In
-            </Link>
-          </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Secondary Navigation Bar */}
-      <div className="bg-gray-50/50 hidden md:block">
-        <nav className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm font-medium text-gray-600">
-          <Link
-            href="/trending"
-            className="hover:text-green-600 transition-colors flex items-center gap-1"
-          >
-            🔥 Trending Now
-          </Link>
-          <Link
-            href="/top-brands"
-            className="hover:text-green-600 transition-colors flex items-center gap-1"
-          >
-            💎 Top Brands
-          </Link>
-          <Link
-            href="/promo-codes"
-            className="hover:text-green-600 transition-colors flex items-center gap-1"
-          >
-            🏷️ Promo Codes
-          </Link>
-          <Link
-            href="/categories/school-supplies"
-            className="hover:text-green-600 transition-colors"
-          >
-            School Supplies
-          </Link>
-          <Link
-            href="/deals/50-off"
-            className="hover:text-green-600 transition-colors"
-          >
-            Over 50% Off
-          </Link>
-          <Link
-            href="/categories/furniture"
-            className="hover:text-green-600 transition-colors"
-          >
-            Furniture
-          </Link>
-          <Link
-            href="/categories/beauty"
-            className="hover:text-green-600 transition-colors"
-          >
-            Beauty
-          </Link>
-          <Link
-            href="/categories/household"
-            className="hover:text-green-600 transition-colors"
-          >
-            Household
-          </Link>
-        </nav>
+        {/* MOBILE MENU */}
+
+        {mobileMenuOpen && (
+          <div className="border-t border-slate-200 bg-white shadow-lg">
+            <nav className="px-4 py-3">
+              {/* MAIN LINKS */}
+
+              <div className="grid grid-cols-2 gap-2">
+                {mainNavigation.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-emerald-50 hover:text-emerald-700"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+
+                <Link
+                  href="/saved"
+                  onClick={closeMobileMenu}
+                  className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-emerald-50 hover:text-emerald-700"
+                >
+                  ♡ Saved
+                </Link>
+              </div>
+
+              {/* SECONDARY LINKS */}
+
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Explore
+                </p>
+
+                <div className="flex flex-col">
+                  {secondaryNavigation.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMobileMenu}
+                      className="rounded-lg px-2 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-emerald-600"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

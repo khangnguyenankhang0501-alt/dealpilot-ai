@@ -1,18 +1,337 @@
 @import "tailwindcss";
 
+/* =========================================================
+   GLOBAL
+========================================================= */
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-
   --primary: #0f172a;
   --accent: #22c55e;
-
   --card: #ffffff;
   --border: #e2e8f0;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* =========================================================
+   HERO PRODUCT CARDS
+   ĐỨNG YÊN - CHỈ ZOOM KHI HOVER
+========================================================= */
+
+.hero-product-card {
+  /*
+    Giữ nguyên góc nghiêng được truyền từ Hero.tsx
+    nhưng KHÔNG có animation bay.
+  */
+  transform: rotate(var(--hero-rotate, 0deg));
+
+  /*
+    Không cho animation làm thay đổi vị trí card.
+  */
+  animation: none !important;
+
+  /*
+    Zoom mượt khi hover.
+  */
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    z-index 200ms ease;
+
+  will-change: transform;
+}
+
+/* Hover từng card */
+
+.hero-product-card:hover {
+  transform: rotate(var(--hero-rotate, 0deg)) scale(1.07);
+
+  z-index: 100 !important;
+}
+
+/* =========================================================
+   HERO BACKGROUND GLOW
+========================================================= */
+
+@keyframes heroGlowPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
+  }
+}
+
+.hero-glow {
+  animation: heroGlowPulse 6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* =========================================================
+   HERO NEON RINGS
+========================================================= */
+
+@keyframes heroRingPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.04);
+  }
+}
+
+.hero-ring {
+  animation: heroRingPulse 5s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+/* =========================================================
+   HERO MOBILE
+   Giữ phần mobile gọn hơn
+========================================================= */
+
+@media (max-width: 1023px) {
+  /*
+    Không để card desktop animation ảnh hưởng mobile.
+  */
+  .hero-product-card {
+    animation: none !important;
+  }
+
+  /*
+    Giảm kích thước hover trên thiết bị cảm ứng.
+  */
+  .hero-product-card:hover {
+    transform: rotate(var(--hero-rotate, 0deg));
+  }
+}
+
+/* =========================================================
+   MOBILE HERO COUNTDOWN
+========================================================= */
+
+@media (max-width: 639px) {
+  /*
+    Countdown mobile nhỏ hơn và không chiếm quá nhiều chiều cao.
+  */
+
+  .hero-product-card {
+    transition:
+      transform 250ms ease,
+      box-shadow 250ms ease;
+  }
+
+  /*
+    Glow nhẹ hơn trên mobile để tránh cảm giác banner quá dài/nặng.
+  */
+
+  .hero-glow {
+    animation-duration: 8s;
+  }
+
+  .hero-ring {
+    animation-duration: 7s;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-product-card,
+  .hero-glow,
+  .hero-ring {
+    animation: none !important;
+  }
+
+  .hero-product-card {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   COMPACT WEBSITE LAYOUT
+   Giảm độ phóng đại tổng thể trên PC
+   Mobile vẫn giữ gần full-width
+========================================================= */
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  body {
+    font-size: 15px;
+  }
+}
+
+/* Màn hình lớn: giữ website gọn, không trải quá rộng */
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1180px;
+  }
+}
+
+/* Màn hình rất lớn */
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1200px;
+  }
+}
+
+/* Mobile không ép container nhỏ */
+@media (max-width: 1023px) {
+  .container {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+/* =========================================================
+   POPULAR COUPONS HORIZONTAL SCROLL
+========================================================= */
+
+.popular-coupons-scroll {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+  touch-action: pan-x !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .popular-coupons-scroll {
+    gap: 12px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .popular-coupons-scroll > div {
+    flex: 0 0 82vw !important;
+    width: 82vw !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Tablet + PC */
+@media (min-width: 640px) {
+  .popular-coupons-scroll {
+    gap: 20px;
+  }
+
+  .popular-coupons-scroll > div {
+    flex: 0 0 320px !important;
+    width: 320px !important;
+  }
+}
+
+/* Scrollbar */
+.popular-coupons-scroll::-webkit-scrollbar {
+  height: 7px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* =========================================================
+   POPULAR COUPONS
+   FIXED CARD WIDTH + HORIZONTAL SCROLL
+========================================================= */
+
+.popular-coupons-scroll {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 20px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Không cho card bị flex kéo giãn */
+.popular-coupons-scroll > div {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+/* Thanh kéo */
+.popular-coupons-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.popular-coupons-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .popular-coupons-scroll {
+    gap: 14px;
+    padding-bottom: 14px;
+  }
+
+  .popular-coupons-scroll > div {
+    flex: 0 0 280px !important;
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+  }
 }

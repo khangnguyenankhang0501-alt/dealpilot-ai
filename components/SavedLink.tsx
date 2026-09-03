@@ -1,68 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { getDealPilotSessionId } from "@/lib/session";
 
 export default function SavedLink() {
-  const [count, setCount] = useState<number>(0);
+  const [count, setCount] = useState(0);
 
-  const loadCount = () => {
+  const loadCount = useCallback(async () => {
     try {
-      const favorites = JSON.parse(
-        localStorage.getItem("dealpilot_favorites") || "[]",
+      const sessionId = getDealPilotSessionId();
+
+      const response = await fetch(
+        `/api/favorites?sessionId=${encodeURIComponent(sessionId)}`,
+        {
+          cache: "no-store",
+        },
       );
-      setCount(favorites.length);
-    } catch (error) {
-      console.error("Error reading favorites count:", error);
+
+      if (!response.ok) {
+        setCount(0);
+        return;
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        setCount(0);
+        return;
+      }
+
+      const coupons = Array.isArray(result.coupons) ? result.coupons : [];
+
+      setCount(coupons.length);
+    } catch {
       setCount(0);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // 1. Tải số lượng ban đầu khi component mount
+    // Load lần đầu
     loadCount();
 
-    // 2. Lắng nghe sự kiện storage (thay đổi từ tab khác)
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "dealpilot_favorites") {
-        loadCount();
-      }
-    };
-
-    // 3. Lắng nghe custom event khi bấm nút tim ở tab hiện tại
+    // Khi FavoriteButton thay đổi
     const handleFavoritesChanged = () => {
       loadCount();
     };
 
-    window.addEventListener("storage", handleStorage);
+    // Khi quay lại tab / trang
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadCount();
+      }
+    };
+
     window.addEventListener(
       "dealpilot-favorites-changed",
       handleFavoritesChanged,
     );
 
-    // Cleanup listeners khi component unmount
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      window.removeEventListener("storage", handleStorage);
       window.removeEventListener(
         "dealpilot-favorites-changed",
         handleFavoritesChanged,
       );
+
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [loadCount]);
 
   return (
     <Link
       href="/saved"
-      className="flex items-center gap-1.5 font-medium hover:text-green-600 transition-colors"
+      className="flex items-center gap-2 text-sm font-medium text-gray-700 transition hover:text-black"
     >
-      <span>♡</span>
-      <span>Saved</span>
-      {count > 0 && (
-        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-green-600 px-1.5 text-xs font-bold text-white">
-          {count}
-        </span>
-      )}
+      <span className="text-lg">{count > 0 ? "♥" : "♡"}</span>
+
+      <span>
+        Saved
+        {count > 0 && ` ${count}`}
+      </span>
     </Link>
   );
 }

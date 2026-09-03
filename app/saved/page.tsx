@@ -20,24 +20,48 @@ export default function SavedPage() {
           return;
         }
 
-        const response = await fetch(
+        // Lấy saved hiện tại
+        let response = await fetch(
           `/api/favorites?sessionId=${encodeURIComponent(sessionId)}`,
         );
 
-        const result = await response.json();
+        let result = await response.json();
+
+        // Nếu đã đăng nhập và API chưa trả coupon,
+        // thử migrate session favorites sang account.
+        if (
+          result.success &&
+          (!result.coupons || result.coupons.length === 0)
+        ) {
+          const migrateResponse = await fetch("/api/favorites/migrate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sessionId,
+            }),
+          });
+
+          const migrateResult = await migrateResponse.json();
+
+          // Migration xong → lấy Saved lại
+          if (migrateResult.success) {
+            response = await fetch(
+              `/api/favorites?sessionId=${encodeURIComponent(sessionId)}`,
+            );
+
+            result = await response.json();
+          }
+        }
 
         if (!result.success) {
           setCoupons([]);
           return;
         }
 
-        const savedCoupons: Coupon[] = Array.isArray(result.coupons)
-          ? result.coupons
-          : [];
-
-        setCoupons(savedCoupons);
-      } catch (error) {
-        console.error("Failed to load saved coupons:", error);
+        setCoupons(Array.isArray(result.coupons) ? result.coupons : []);
+      } catch {
         setCoupons([]);
       } finally {
         setLoading(false);

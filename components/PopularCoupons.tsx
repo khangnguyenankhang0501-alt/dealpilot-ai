@@ -36,28 +36,88 @@ export default async function PopularCoupons() {
   }
 
   return (
-    <section className="my-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-          <span>🔥</span>
-          <span>Popular Coupons</span>
-        </h2>
-        <span className="text-sm text-gray-500">Based on clicks</span>
+    <section className="my-8 w-full sm:my-10">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+      <div className="mb-4 flex items-end justify-between gap-3 sm:mb-5">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
+            <span className="text-lg sm:text-xl">🔥</span>
+            <span>Popular Coupons</span>
+          </h2>
+
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+            Top deals based on popularity
+          </p>
+        </div>
+
+        {/* UPDATED STATUS */}
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+
+          <span className="text-xs font-semibold text-gray-500">
+            Updated today
+          </span>
+        </div>
       </div>
 
-      {/* Thanh trượt ngang chứa các thẻ coupon */}
-      <div className="flex w-full gap-5 overflow-x-auto pb-6 pt-1 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
+      {/* =====================================================
+          HORIZONTAL COUPON SCROLLER
+      ===================================================== */}
+      <div
+        className="
+          popular-coupons-scroll
+          flex
+          w-full
+          gap-4
+          overflow-x-auto
+          overflow-y-hidden
+          pb-4
+          pt-1
+          snap-x
+          snap-mandatory
+          scroll-smooth
+          overscroll-x-contain
+          touch-pan-x
+          [-webkit-overflow-scrolling:touch]
+          [scrollbar-width:auto]
+          [&::-webkit-scrollbar]:h-2
+          [&::-webkit-scrollbar-track]:rounded-full
+          [&::-webkit-scrollbar-track]:bg-gray-100
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          [&::-webkit-scrollbar-thumb]:bg-gray-300
+          hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
+        "
+      >
         {coupons.map((coupon) => (
           <div
             key={coupon.id}
-            className="min-w-[280px] sm:min-w-[320px] max-w-[320px] shrink-0 snap-start flex"
+            className="
+              w-[270px]
+              min-w-[270px]
+              max-w-[270px]
+              shrink-0
+              snap-start
+              sm:w-[290px]
+              sm:min-w-[290px]
+              sm:max-w-[290px]
+            "
           >
-            <div className="w-full">
-              <CouponCard coupon={coupon} />
-            </div>
+            <CouponCard coupon={coupon} />
           </div>
         ))}
       </div>
+
+      {/* =====================================================
+          MOBILE SCROLL HINT
+      ===================================================== */}
+      {coupons.length > 1 && (
+        <div className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium text-gray-400 sm:hidden">
+          <span>Swipe to explore</span>
+          <span>→</span>
+        </div>
+      )}
     </section>
   );
 }
