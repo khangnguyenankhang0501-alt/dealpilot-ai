@@ -46,6 +46,19 @@ export async function generateMetadata({
   return {
     title: post.seo_title || post.title,
     description: post.seo_description || post.excerpt,
+
+    openGraph: {
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+      type: "article",
+      url: `https://dealpilot-ai-iota.vercel.app/blog/${post.slug}`,
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title: post.seo_title || post.title,
+      description: post.seo_description || post.excerpt,
+    },
   };
 }
 
