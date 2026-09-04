@@ -23,7 +23,17 @@ export async function generateMetadata({
 
   const { data: post } = await supabase
     .from("posts")
-    .select("title, slug, excerpt, seo_title, seo_description, image_url")
+    .select(
+      `
+      title,
+      slug,
+      excerpt,
+      seo_title,
+      seo_description,
+      featured_image,
+      created_at
+    `,
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -34,9 +44,9 @@ export async function generateMetadata({
     };
   }
 
-  const title = post.seo_title || post.title;
+  const title = post.seo_title?.trim() || post.title;
 
-  const description = post.seo_description || post.excerpt || "";
+  const description = post.seo_description?.trim() || post.excerpt || "";
 
   return {
     title,
@@ -50,14 +60,16 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
+      locale: "en_US",
+      publishedTime: post.created_at,
       url: `${SITE_URL}/blog/${post.slug}`,
       siteName: "DealPilot",
 
-      ...(post.image_url
+      ...(post.featured_image
         ? {
             images: [
               {
-                url: post.image_url,
+                url: post.featured_image,
                 width: 1200,
                 height: 630,
                 alt: post.title,
@@ -72,9 +84,9 @@ export async function generateMetadata({
       title,
       description,
 
-      ...(post.image_url
+      ...(post.featured_image
         ? {
-            images: [post.image_url],
+            images: [post.featured_image],
           }
         : {}),
     },
@@ -125,9 +137,9 @@ export default async function BlogPostPage({ params }: PageProps) {
       "@id": `${SITE_URL}/blog/${post.slug}`,
     },
 
-    ...(post.image_url
+    ...(post.featured_image
       ? {
-          image: [post.image_url],
+          image: [post.featured_image],
         }
       : {}),
   };
@@ -174,10 +186,10 @@ export default async function BlogPostPage({ params }: PageProps) {
             </p>
           )}
 
-          {post.image_url && (
+          {post.featured_image && (
             <div className="relative mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
               <Image
-                src={post.image_url}
+                src={post.featured_image}
                 alt={post.title}
                 width={1200}
                 height={630}
