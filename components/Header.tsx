@@ -91,11 +91,11 @@ export default function Header() {
         {/* MAIN HEADER */}
 
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
-          <div className="flex min-h-[72px] items-center gap-6">
+          <div className="grid min-h-[72px] grid-cols-[180px_1fr_auto] items-center gap-8">
             {/* LOGO */}
             <Link
               href="/"
-              className="group shrink-0"
+              className="group justify-self-start"
               aria-label="DealPilot Home"
             >
               <span className="text-[23px] font-extrabold tracking-[-0.04em] text-slate-900">
@@ -107,7 +107,7 @@ export default function Header() {
             </Link>
 
             {/* SEARCH */}
-            <div className="relative w-full max-w-[430px]">
+            <div className="relative mx-auto w-full max-w-[520px]">
               <div
                 className={`
           flex h-11 w-full items-center rounded-full border
@@ -220,8 +220,8 @@ export default function Header() {
             </div>
 
             {/* NAVIGATION */}
-            <nav className="ml-auto flex shrink-0 items-center">
-              <div className="flex items-center gap-2">
+            <nav className="justify-self-end flex items-center">
+              <div className="flex items-center gap-5">
                 {mainNavigation.map((item) => (
                   <Link
                     key={item.href}
@@ -246,7 +246,7 @@ export default function Header() {
               </div>
 
               {/* SAVED */}
-              <div className="ml-3 border-l border-slate-200 pl-4">
+              <div className="ml-5 border-l border-slate-200 pl-5">
                 <SavedLink />
               </div>
             </nav>
