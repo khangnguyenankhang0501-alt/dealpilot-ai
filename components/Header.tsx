@@ -13,10 +13,6 @@ type SearchResult = {
 
 const mainNavigation = [
   {
-    label: "Stores",
-    href: "/stores",
-  },
-  {
     label: "Coupons",
     href: "/coupons",
   },
@@ -95,9 +91,8 @@ export default function Header() {
         {/* MAIN HEADER */}
 
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
-          <div className="flex min-h-[72px] items-center gap-5">
+          <div className="flex min-h-[72px] items-center gap-6">
             {/* LOGO */}
-
             <Link
               href="/"
               className="group shrink-0"
@@ -112,27 +107,22 @@ export default function Header() {
             </Link>
 
             {/* SEARCH */}
-
-            <div className="relative min-w-0 max-w-[430px] flex-1">
+            <div className="relative w-full max-w-[430px]">
               <div
                 className={`
-                  flex h-11 items-center rounded-full border
-                  bg-slate-50/70
-                  transition-all duration-200
-                  ${
-                    searchFocused
-                      ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08)]"
-                      : "border-slate-200 hover:border-slate-300 hover:bg-white"
-                  }
-                `}
+          flex h-11 w-full items-center rounded-full border
+          bg-slate-50/70
+          transition-all duration-200
+          ${
+            searchFocused
+              ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08)]"
+              : "border-slate-200 hover:border-slate-300 hover:bg-white"
+          }
+        `}
               >
-                {/* SEARCH ICON */}
-
                 <span className="flex w-10 shrink-0 items-center justify-center text-[15px] text-slate-400">
                   🔍
                 </span>
-
-                {/* INPUT */}
 
                 <input
                   type="search"
@@ -144,41 +134,39 @@ export default function Header() {
                   }}
                   placeholder="Search coupons, stores..."
                   className="
-                    h-full
-                    min-w-0
-                    flex-1
-                    bg-transparent
-                    pr-2
-                    text-sm
-                    font-medium
-                    text-slate-800
-                    outline-none
-                    placeholder:text-slate-400
-                  "
+            h-full
+            min-w-0
+            flex-1
+            bg-transparent
+            pr-2
+            text-sm
+            font-medium
+            text-slate-800
+            outline-none
+            placeholder:text-slate-400
+          "
                   aria-label="Search coupons and stores"
                 />
-
-                {/* CLEAR */}
 
                 {query && (
                   <button
                     type="button"
                     onClick={clearSearch}
                     className="
-                      mr-2
-                      flex
-                      h-7
-                      w-7
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      text-sm
-                      text-slate-400
-                      transition
-                      hover:bg-slate-200
-                      hover:text-slate-700
-                    "
+              mr-2
+              flex
+              h-7
+              w-7
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              text-sm
+              text-slate-400
+              transition
+              hover:bg-slate-200
+              hover:text-slate-700
+            "
                     aria-label="Clear search"
                   >
                     ×
@@ -186,22 +174,21 @@ export default function Header() {
                 )}
               </div>
 
-              {/* DESKTOP SEARCH RESULTS */}
-
+              {/* SEARCH RESULTS */}
               {results.length > 0 && (
                 <div
                   className="
-                    absolute
-                    left-0
-                    right-0
-                    top-[calc(100%+10px)]
-                    overflow-hidden
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    bg-white
-                    shadow-[0_16px_45px_rgba(15,23,42,0.12)]
-                  "
+            absolute
+            left-0
+            right-0
+            top-[calc(100%+10px)]
+            overflow-hidden
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            shadow-[0_16px_45px_rgba(15,23,42,0.12)]
+          "
                 >
                   {results.map((item, index) => (
                     <Link
@@ -209,15 +196,15 @@ export default function Header() {
                       href={`/coupons/${item.slug}`}
                       onClick={clearSearch}
                       className="
-                        block
-                        border-b
-                        border-slate-100
-                        px-4
-                        py-3.5
-                        transition-colors
-                        last:border-b-0
-                        hover:bg-emerald-50/50
-                      "
+                block
+                border-b
+                border-slate-100
+                px-4
+                py-3.5
+                transition-colors
+                last:border-b-0
+                hover:bg-emerald-50/50
+              "
                     >
                       <div className="truncate text-sm font-bold text-slate-900">
                         {item.title}
@@ -232,34 +219,34 @@ export default function Header() {
               )}
             </div>
 
-            {/* MAIN NAVIGATION */}
-
-            <nav className="ml-auto flex shrink-0 items-center gap-3 lg:gap-4">
-              {mainNavigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="
-                    whitespace-nowrap
-                    rounded-lg
-                    px-2
-                    py-2
-                    text-sm
-                    font-semibold
-                    text-slate-600
-                    transition-all
-                    duration-200
-                    hover:bg-slate-50
-                    hover:text-emerald-600
-                  "
-                >
-                  {item.label}
-                </Link>
-              ))}
+            {/* NAVIGATION */}
+            <nav className="ml-auto flex shrink-0 items-center">
+              <div className="flex items-center gap-2">
+                {mainNavigation.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="
+              whitespace-nowrap
+              rounded-lg
+              px-3
+              py-2
+              text-sm
+              font-semibold
+              text-slate-600
+              transition-all
+              duration-200
+              hover:bg-slate-50
+              hover:text-emerald-600
+            "
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
 
               {/* SAVED */}
-
-              <div className="ml-1 border-l border-slate-200 pl-3">
+              <div className="ml-3 border-l border-slate-200 pl-4">
                 <SavedLink />
               </div>
             </nav>
