@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 interface CouponLinkButtonProps {
   couponSlug?: string | null;
   couponCode?: string | null;
@@ -9,34 +5,12 @@ interface CouponLinkButtonProps {
 
 export default function CouponLinkButton({
   couponSlug,
-  couponCode,
 }: CouponLinkButtonProps) {
-  const [clicked, setClicked] = useState(false);
-
-  const detailUrl = couponSlug ? `/coupons/${couponSlug}` : "/deals";
-
-  const handleClick = async () => {
-    // copy coupon code
-    if (couponCode) {
-      try {
-        await navigator.clipboard.writeText(couponCode);
-      } catch (error) {
-        console.error("Copy failed", error);
-      }
-    }
-
-    setClicked(true);
-
-    // sau 5 giây chuyển sang trang chi tiết
-    setTimeout(() => {
-      window.location.href = detailUrl;
-    }, 5000);
-  };
+  const href = couponSlug ? `/coupons/${couponSlug}` : "/deals";
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
+    <a
+      href={href}
       className="
         group
         flex
@@ -72,27 +46,21 @@ export default function CouponLinkButton({
       "
       aria-label="Get this deal"
     >
-      {clicked ? (
-        <span className="whitespace-nowrap">Copy and use code on Amazon</span>
-      ) : (
-        <>
-          <span className="whitespace-nowrap">Get Code</span>
+      <span className="whitespace-nowrap">Get Deal</span>
 
-          <span
-            aria-hidden="true"
-            className="
-              text-sm
-              leading-none
-              transition-transform
-              duration-200
-              ease-out
-              group-hover:translate-x-0.5
-            "
-          >
-            →
-          </span>
-        </>
-      )}
-    </button>
+      <span
+        aria-hidden="true"
+        className="
+          text-sm
+          leading-none
+          transition-transform
+          duration-200
+          ease-out
+          group-hover:translate-x-0.5
+        "
+      >
+        →
+      </span>
+    </a>
   );
 }
