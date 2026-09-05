@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import SavedLink from "@/components/SavedLink";
@@ -29,46 +28,11 @@ const mainNavigation = [
     label: "Categories",
     href: "/categories",
   },
-  {
-    label: "Blog",
-    href: "/blog",
-  },
 ];
 
-const secondaryNavigation = [
-  {
-    label: "🔥 Trending Now",
-    href: "/trending",
-  },
-  {
-    label: "💎 Top Brands",
-    href: "/top-brands",
-  },
-  {
-    label: "🏷️ Promo Codes",
-    href: "/promo-codes",
-  },
-  {
-    label: "School Supplies",
-    href: "/categories/school-supplies",
-  },
-  {
-    label: "Over 50% Off",
-    href: "/deals/50-off",
-  },
-  {
-    label: "Furniture",
-    href: "/categories/furniture",
-  },
-  {
-    label: "Beauty",
-    href: "/categories/beauty",
-  },
-  {
-    label: "Household",
-    href: "/categories/household",
-  },
-];
+/*
+ * Secondary navigation đã được ẩn hoàn toàn.
+ */
 
 export default function Header() {
   const [query, setQuery] = useState("");
@@ -129,11 +93,10 @@ export default function Header() {
 
       <div className="hidden md:block">
         {/* MAIN HEADER */}
+
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
           <div className="flex min-h-[72px] items-center gap-5">
-            {/* ===================================================
-                LOGO
-            =================================================== */}
+            {/* LOGO */}
 
             <Link
               href="/"
@@ -148,9 +111,7 @@ export default function Header() {
               </span>
             </Link>
 
-            {/* ===================================================
-                SEARCH
-            =================================================== */}
+            {/* SEARCH */}
 
             <div className="relative min-w-0 max-w-[430px] flex-1">
               <div
@@ -225,9 +186,7 @@ export default function Header() {
                 )}
               </div>
 
-              {/* =================================================
-                  DESKTOP SEARCH RESULTS
-              ================================================= */}
+              {/* DESKTOP SEARCH RESULTS */}
 
               {results.length > 0 && (
                 <div
@@ -273,9 +232,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* ===================================================
-                MAIN NAVIGATION
-            =================================================== */}
+            {/* MAIN NAVIGATION */}
 
             <nav className="ml-auto flex shrink-0 items-center gap-3 lg:gap-4">
               {mainNavigation.map((item) => (
@@ -309,47 +266,8 @@ export default function Header() {
           </div>
         </div>
 
-        {/* =======================================================
-            SECONDARY NAVIGATION
-        ======================================================== */}
-
-        <div className="border-t border-slate-100 bg-slate-50/80">
-          <nav
-            className="
-              mx-auto
-              flex
-              w-full
-              max-w-6xl
-              items-center
-              gap-x-7
-              overflow-x-auto
-              px-4
-              py-2.5
-              text-xs
-              font-semibold
-              text-slate-600
-              lg:px-6
-              lg:text-sm
-            "
-          >
-            {secondaryNavigation.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="
-                  shrink-0
-                  whitespace-nowrap
-                  rounded-md
-                  py-1
-                  transition-colors
-                  hover:text-emerald-600
-                "
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
+        {/* SECONDARY NAVIGATION
+            ĐÃ ẨN HOÀN TOÀN */}
       </div>
 
       {/* =========================================================
@@ -357,9 +275,7 @@ export default function Header() {
       ========================================================= */}
 
       <div className="md:hidden">
-        {/* =======================================================
-            MOBILE TOP ROW
-        ======================================================== */}
+        {/* MOBILE TOP ROW */}
 
         <div className="flex h-[62px] items-center justify-between px-4">
           {/* LOGO */}
@@ -372,7 +288,7 @@ export default function Header() {
           >
             <span className="text-[22px] font-extrabold tracking-[-0.04em] text-slate-900">
               Deal
-              <span className="text-emerald-500 group-hover:text-emerald-600">
+              <span className="text-emerald-500 transition-colors group-hover:text-emerald-600">
                 Pilot
               </span>
             </span>
@@ -435,9 +351,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* =======================================================
-            MOBILE SEARCH
-        ======================================================== */}
+        {/* MOBILE SEARCH */}
 
         <div className="px-4 pb-3">
           <div
@@ -510,9 +424,7 @@ export default function Header() {
             )}
           </div>
 
-          {/* =====================================================
-              MOBILE SEARCH RESULTS
-          ===================================================== */}
+          {/* MOBILE SEARCH RESULTS */}
 
           {results.length > 0 && (
             <div className="relative z-50">
@@ -560,9 +472,7 @@ export default function Header() {
           )}
         </div>
 
-        {/* =======================================================
-            MOBILE MENU
-        ======================================================== */}
+        {/* MOBILE MENU */}
 
         {mobileMenuOpen && (
           <div
@@ -625,36 +535,7 @@ export default function Header() {
                 </Link>
               </div>
 
-              {/* SECONDARY */}
-
-              <div className="mt-4 border-t border-slate-100 pt-4">
-                <p className="mb-2 px-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
-                  Explore
-                </p>
-
-                <div className="flex flex-col">
-                  {secondaryNavigation.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeMobileMenu}
-                      className="
-                        rounded-lg
-                        px-2
-                        py-2.5
-                        text-sm
-                        font-medium
-                        text-slate-600
-                        transition
-                        hover:bg-slate-50
-                        hover:text-emerald-600
-                      "
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              {/* SECONDARY MENU ĐÃ XÓA */}
             </nav>
           </div>
         )}

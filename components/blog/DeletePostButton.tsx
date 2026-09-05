@@ -1,21 +1,30 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function DeletePostButton({ id }: { id: number }) {
-  async function handleDelete() {
-    const confirmed = confirm("Delete this post permanently?");
+type Props = {
+  id: string;
+};
 
-    if (!confirmed) return;
+export default function DeletePostButton({ id }: Props) {
+  const router = useRouter();
+
+  async function handleDelete() {
+    const ok = confirm("Delete this post?");
+
+    if (!ok) return;
 
     const { error } = await supabase.from("posts").delete().eq("id", id);
 
     if (error) {
-      alert("Delete failed");
+      alert(error.message);
       return;
     }
 
-    window.location.reload();
+    alert("Deleted");
+
+    router.refresh();
   }
 
   return (

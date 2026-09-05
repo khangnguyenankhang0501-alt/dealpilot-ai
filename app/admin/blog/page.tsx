@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import DeletePostButton from "@/components/blog/DeletePostButton";
+import TogglePostStatusButton from "@/components/blog/TogglePostStatusButton";
 
 export default async function AdminBlogPage() {
   const { data: posts } = await supabase
@@ -31,6 +32,8 @@ export default async function AdminBlogPage() {
 
               <th className="p-4 text-left">Slug</th>
 
+              <th className="p-4 text-left">Status</th>
+
               <th className="p-4 text-left">Date</th>
 
               <th className="p-4 text-left">Actions</th>
@@ -45,11 +48,23 @@ export default async function AdminBlogPage() {
                 <td className="p-4">{post.slug}</td>
 
                 <td className="p-4">
+                  <span
+                    className={
+                      post.status === "published"
+                        ? "rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700"
+                        : "rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700"
+                    }
+                  >
+                    {post.status}
+                  </span>
+                </td>
+
+                <td className="p-4">
                   {new Date(post.created_at).toLocaleDateString()}
                 </td>
 
                 <td className="p-4">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/admin/blog/${post.id}`}
                       className="rounded bg-blue-600 px-3 py-2 text-white"
@@ -64,6 +79,8 @@ export default async function AdminBlogPage() {
                     >
                       View
                     </Link>
+
+                    <TogglePostStatusButton id={post.id} status={post.status} />
 
                     <DeletePostButton id={post.id} />
                   </div>

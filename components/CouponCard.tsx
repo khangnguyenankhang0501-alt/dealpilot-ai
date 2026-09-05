@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import FavoriteButton from "@/components/FavoriteButton";
@@ -55,7 +58,15 @@ export default function CouponCard({
 
   const storeName = coupon.stores?.name || "Store";
 
-  const storeLogo = coupon.stores?.logo_url || null;
+  const storeLogo = coupon.stores?.logo_url || "";
+
+  const storeInitial = storeName.trim().charAt(0).toUpperCase() || "S";
+
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [storeLogo]);
 
   return (
     <article
@@ -96,8 +107,6 @@ export default function CouponCard({
           sm:h-[175px]
         "
       >
-        {/* IMAGE */}
-
         {hasImage ? (
           <Image
             src={coupon.image_url!}
@@ -132,8 +141,6 @@ export default function CouponCard({
           </div>
         )}
 
-        {/* SOFT IMAGE OVERLAY */}
-
         <div
           className="
             pointer-events-none
@@ -149,8 +156,6 @@ export default function CouponCard({
             group-hover:opacity-100
           "
         />
-
-        {/* DISCOUNT */}
 
         {discount && (
           <span
@@ -175,8 +180,6 @@ export default function CouponCard({
           </span>
         )}
 
-        {/* EXCLUSIVE */}
-
         {coupon.is_exclusive && (
           <span
             className="
@@ -199,16 +202,12 @@ export default function CouponCard({
           </span>
         )}
 
-        {/* FAVORITE */}
-
         <div className="absolute right-3 top-3 z-20">
           <FavoriteButton
             couponId={String(coupon.id)}
             onChange={onFavoriteChange}
           />
         </div>
-
-        {/* VERIFIED */}
 
         {coupon.verified && (
           <div
@@ -250,10 +249,6 @@ export default function CouponCard({
           sm:p-4
         "
       >
-        {/* =======================================================
-            TOP
-        ======================================================= */}
-
         <div className="min-w-0">
           {/* BADGES */}
 
@@ -412,51 +407,38 @@ export default function CouponCard({
               >
                 {/* STORE LOGO */}
 
-                {storeLogo ? (
-                  <div
-                    className="
-                      relative
-                      h-6
-                      w-6
-                      shrink-0
-                      overflow-hidden
-                      rounded-md
-                      border
-                      border-slate-100
-                      bg-white
-                      shadow-sm
-                    "
-                  >
-                    <Image
+                <div
+                  className="
+    relative
+    flex
+    h-9
+    w-9
+    shrink-0
+    items-center
+    justify-center
+    overflow-hidden
+    rounded-lg
+    border
+    border-slate-100
+    bg-white
+    shadow-sm
+  "
+                >
+                  {storeLogo && !logoFailed ? (
+                    <img
                       src={storeLogo}
                       alt={storeName}
-                      fill
-                      sizes="24px"
-                      className="
-                        object-contain
-                        p-1
-                      "
+                      className="h-full w-full object-contain"
+                      onError={() => {
+                        setLogoFailed(true);
+                      }}
                     />
-                  </div>
-                ) : (
-                  <div
-                    className="
-                      flex
-                      h-6
-                      w-6
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-md
-                      bg-slate-100
-                      text-[9px]
-                      font-black
-                      text-slate-500
-                    "
-                  >
-                    S
-                  </div>
-                )}
+                  ) : (
+                    <span className="text-[11px] font-black text-slate-500">
+                      {storeInitial}
+                    </span>
+                  )}
+                </div>
 
                 <span className="min-w-0 truncate">{storeName}</span>
 
@@ -502,9 +484,10 @@ export default function CouponCard({
                     bg-slate-100
                     text-[9px]
                     font-black
+                    text-slate-500
                   "
                 >
-                  S
+                  {storeInitial}
                 </div>
 
                 <span>{storeName}</span>
@@ -513,9 +496,9 @@ export default function CouponCard({
           </div>
         </div>
 
-        {/* =======================================================
+        {/* =========================================================
             BOTTOM
-        ======================================================= */}
+        ========================================================= */}
 
         <div className="mt-auto">
           {/* CTA */}
@@ -530,8 +513,6 @@ export default function CouponCard({
           >
             {hasCode ? (
               <>
-                {/* COUPON CODE */}
-
                 <div
                   className="
                     flex
@@ -558,8 +539,6 @@ export default function CouponCard({
                   </span>
                 </div>
 
-                {/* CTA BUTTON */}
-
                 <div className="shrink-0">
                   <CouponLinkButton
                     couponSlug={coupon.slug}
@@ -577,9 +556,7 @@ export default function CouponCard({
             )}
           </div>
 
-          {/* =====================================================
-              TRUST / DETAILS
-          ===================================================== */}
+          {/* TRUST / DETAILS */}
 
           <div
             className="
@@ -595,8 +572,6 @@ export default function CouponCard({
               sm:text-[11px]
             "
           >
-            {/* VERIFIED */}
-
             {coupon.verified && (
               <div className="flex items-center gap-1.5 font-bold text-emerald-600">
                 <span
@@ -619,8 +594,6 @@ export default function CouponCard({
               </div>
             )}
 
-            {/* RATING */}
-
             {coupon.rating !== null && coupon.rating !== undefined && (
               <div className="flex items-center gap-1">
                 <span className="text-amber-400">★</span>
@@ -638,8 +611,6 @@ export default function CouponCard({
               </div>
             )}
 
-            {/* POPULARITY */}
-
             {coupon.popularity_count !== null &&
               coupon.popularity_count !== undefined &&
               Number(coupon.popularity_count) > 0 && (
@@ -648,19 +619,13 @@ export default function CouponCard({
                 </div>
               )}
 
-            {/* SHIPPING */}
-
             {coupon.shipping_text && (
               <div className="truncate">🚚 {coupon.shipping_text}</div>
             )}
 
-            {/* SOLD */}
-
             {coupon.sold_text && (
               <div className="truncate">{coupon.sold_text}</div>
             )}
-
-            {/* EXPIRATION */}
 
             {coupon.expires_at && (
               <div className="truncate text-slate-400">
