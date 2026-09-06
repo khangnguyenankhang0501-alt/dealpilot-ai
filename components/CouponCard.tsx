@@ -122,7 +122,12 @@ export default function CouponCard({
   ======================================================= */
 
   const openDetailPage = () => {
-    router.push(`/coupons/${coupon.slug}`);
+    if (!coupon.slug) {
+      console.error("Coupon thiếu slug:", coupon);
+      return;
+    }
+
+    router.push(`/coupons/${encodeURIComponent(coupon.slug)}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
