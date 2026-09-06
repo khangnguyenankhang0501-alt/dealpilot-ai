@@ -1,66 +1,94 @@
+"use client";
+
+import { useState } from "react";
+import CouponRevealModal from "./CouponRevealModal";
+
 interface CouponLinkButtonProps {
   couponSlug?: string | null;
   couponCode?: string | null;
+  affiliateUrl?: string | null;
+  title?: string | null;
+  imageUrl?: string | null;
+  discount?: string | null;
+  salePrice?: string | null;
+  originalPrice?: string | null;
+  storeName?: string | null;
 }
 
 export default function CouponLinkButton({
-  couponSlug,
+  couponCode,
+  affiliateUrl,
+  title,
+  imageUrl,
+  discount,
+  salePrice,
+  originalPrice,
+  storeName,
 }: CouponLinkButtonProps) {
-  const href = couponSlug ? `/coupons/${couponSlug}` : "/deals";
+  const [open, setOpen] = useState(false);
+
+  const hasCode = Boolean(couponCode);
 
   return (
-    <a
-      href={href}
-      className="
-        group
-        flex
-        h-10
-        w-full
-        min-w-[108px]
-        items-center
-        justify-center
-        gap-1.5
-        rounded-xl
-        bg-emerald-500
-        px-3
-        text-[11px]
-        font-extrabold
-        tracking-tight
-        text-white
-        shadow-[0_6px_16px_rgba(16,185,129,0.20)]
-        transition-all
-        duration-200
-        ease-out
-        hover:-translate-y-0.5
-        hover:bg-emerald-600
-        hover:shadow-[0_10px_22px_rgba(16,185,129,0.28)]
-        active:translate-y-0
-        active:scale-[0.98]
-        focus:outline-none
-        focus:ring-2
-        focus:ring-emerald-500/30
-        focus:ring-offset-2
-        sm:min-w-[112px]
-        sm:px-3.5
-        sm:text-xs
-      "
-      aria-label="Get this deal"
-    >
-      <span className="whitespace-nowrap">Get Deal</span>
-
-      <span
-        aria-hidden="true"
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
         className="
-          text-sm
-          leading-none
-          transition-transform
+          relative
+          flex
+          h-8
+          w-full
+          overflow-hidden
+          rounded-full
+          bg-emerald-500
+          text-white
+          shadow-sm
+          transition-all
           duration-200
-          ease-out
-          group-hover:translate-x-0.5
+          hover:bg-emerald-600
+          hover:shadow-md
+          sm:h-9
         "
       >
-        →
-      </span>
-    </a>
+        <span className="flex flex-1 items-center justify-center text-[10px] font-extrabold tracking-wide sm:text-[11px]">
+          {hasCode ? "Reveal Code" : "Get Deal"}
+        </span>
+
+        <span
+          className="
+            flex
+            h-full
+            w-10
+            items-center
+            justify-center
+            border-l
+            border-dashed
+            border-white/50
+            bg-black/10
+            text-[8px]
+            font-black
+            tracking-wider
+            sm:w-11
+            sm:text-[9px]
+          "
+        >
+          {hasCode ? "CODE" : "→"}
+        </span>
+      </button>
+
+      <CouponRevealModal
+        open={open}
+        code={couponCode || ""}
+        title={title || "Special Deal"}
+        affiliateUrl={affiliateUrl || ""}
+        imageUrl={imageUrl}
+        discount={discount}
+        salePrice={salePrice}
+        originalPrice={originalPrice}
+        storeName={storeName}
+        onClose={() => setOpen(false)}
+      />
+    </>
   );
 }

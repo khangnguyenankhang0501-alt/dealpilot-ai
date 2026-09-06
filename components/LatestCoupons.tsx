@@ -1,20 +1,13 @@
+import Link from "next/link";
 import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
 
 export const revalidate = 0;
 
 export default async function LatestCoupons() {
-  /* =========================================================
-     CURRENT TIME
-  ========================================================= */
-
   const today = new Date().toISOString();
 
-  /* =========================================================
-     FETCH LATEST COUPONS
-  ========================================================= */
-
-  const { data: coupons, error } = await supabase
+  const { data: coupons } = await supabase
     .from("coupons")
     .select(
       `
@@ -35,107 +28,13 @@ export default async function LatestCoupons() {
     })
     .limit(12);
 
-  /* =========================================================
-     ERROR HANDLING
-  ========================================================= */
-
-  if (error) {
-    console.error("Error fetching latest coupons:", error);
-  }
-
-  /* =========================================================
-     EMPTY STATE
-  ========================================================= */
-
-  if (!coupons || coupons.length === 0) {
-    return (
-      <section className="w-full">
-        {/* HEADER */}
-
-        <div className="mb-5 sm:mb-6">
-          <div className="flex items-center gap-2">
-            <span
-              className="
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-cyan-50
-                text-base
-                shadow-sm
-                sm:h-9
-                sm:w-9
-                sm:text-lg
-              "
-            >
-              🆕
-            </span>
-
-            <h2
-              className="
-                text-xl
-                font-black
-                tracking-tight
-                text-slate-900
-                sm:text-2xl
-              "
-            >
-              Latest Coupons
-            </h2>
-          </div>
-
-          <p
-            className="
-              mt-1.5
-              text-xs
-              leading-5
-              text-slate-500
-              sm:text-sm
-            "
-          >
-            Fresh coupon codes and deals added recently.
-          </p>
-        </div>
-
-        {/* EMPTY STATE */}
-
-        <div
-          className="
-            flex
-            min-h-[180px]
-            items-center
-            justify-center
-            rounded-2xl
-            border
-            border-slate-200
-            bg-white
-            px-5
-            py-12
-            text-center
-            text-sm
-            font-medium
-            text-slate-500
-            shadow-sm
-          "
-        >
-          No active coupons available right now.
-        </div>
-      </section>
-    );
-  }
-
-  /* =========================================================
-     PAGE
-  ========================================================= */
+  const hasCoupons = Boolean(coupons && coupons.length > 0);
 
   return (
     <section className="w-full">
-      {/* =====================================================
+      {/* =========================================================
           HEADER
-      ===================================================== */}
+      ========================================================= */}
 
       <div
         className="
@@ -147,136 +46,255 @@ export default async function LatestCoupons() {
           sm:mb-6
         "
       >
-        {/* LEFT */}
-
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span
+          <div className="flex items-center gap-2.5">
+            <div
               className="
                 flex
-                h-8
-                w-8
+                h-9
+                w-9
                 shrink-0
                 items-center
                 justify-center
                 rounded-xl
+                border
+                border-cyan-100
                 bg-cyan-50
                 text-base
                 shadow-sm
-                sm:h-9
-                sm:w-9
+                sm:h-10
+                sm:w-10
                 sm:text-lg
               "
             >
               🆕
-            </span>
+            </div>
 
-            <h2
+            <div className="min-w-0">
+              <h2
+                className="
+                  truncate
+                  text-xl
+                  font-black
+                  tracking-tight
+                  text-slate-900
+                  sm:text-2xl
+                "
+              >
+                Latest Coupons
+              </h2>
+
+              <p
+                className="
+                  mt-1
+                  text-[11px]
+                  leading-5
+                  text-slate-500
+                  sm:text-xs
+                "
+              >
+                Fresh coupon codes and deals added recently.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================
+            DESKTOP STATUS + VIEW ALL
+        ===================================================== */}
+
+        <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
+          {hasCoupons && (
+            <div
               className="
-                truncate
-                text-xl
-                font-black
-                tracking-tight
-                text-slate-900
-                sm:text-2xl
+                flex
+                items-center
+                gap-2
+                rounded-full
+                border
+                border-slate-200
+                bg-white
+                px-3
+                py-1.5
+                shadow-sm
               "
             >
-              Latest Coupons
-            </h2>
+              <span className="relative flex h-2.5 w-2.5">
+                <span
+                  className="
+                    absolute
+                    h-full
+                    w-full
+                    animate-ping
+                    rounded-full
+                    bg-emerald-400
+                    opacity-60
+                  "
+                />
+
+                <span
+                  className="
+                    relative
+                    h-2.5
+                    w-2.5
+                    rounded-full
+                    bg-emerald-500
+                  "
+                />
+              </span>
+
+              <span className="text-[11px] font-bold text-slate-500">
+                Updated today
+              </span>
+            </div>
+          )}
+
+          <Link
+            href="/coupons"
+            className="
+              inline-flex
+              h-9
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-slate-200
+              bg-white
+              px-3.5
+              text-[11px]
+              font-extrabold
+              text-slate-700
+              shadow-sm
+              transition-all
+              duration-200
+              hover:border-emerald-200
+              hover:bg-emerald-50
+              hover:text-emerald-600
+            "
+          >
+            View all coupons →
+          </Link>
+        </div>
+      </div>
+
+      {/* =========================================================
+          EMPTY STATE
+      ========================================================= */}
+
+      {!hasCoupons ? (
+        <div
+          className="
+            flex
+            min-h-[200px]
+            flex-col
+            items-center
+            justify-center
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            px-6
+            py-12
+            text-center
+            shadow-[0_6px_20px_rgba(15,23,42,0.04)]
+          "
+        >
+          <div
+            className="
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-slate-50
+              text-2xl
+            "
+          >
+            🏷️
           </div>
+
+          <h3
+            className="
+              mt-4
+              text-sm
+              font-black
+              text-slate-900
+            "
+          >
+            No active coupons right now
+          </h3>
 
           <p
             className="
               mt-1.5
-              max-w-xl
+              max-w-sm
               text-xs
               leading-5
               text-slate-500
-              sm:text-sm
             "
           >
-            Fresh coupon codes and deals added recently.
+            New deals and coupon codes will appear here as they are added.
           </p>
         </div>
+      ) : (
+        <>
+          {/* =======================================================
+              COUPON GRID
+          ======================================================= */}
 
-        {/* RIGHT STATUS */}
-
-        <div
-          className="
-            hidden
-            shrink-0
-            items-center
-            gap-2
-            rounded-full
-            border
-            border-slate-200
-            bg-white
-            px-3
-            py-1.5
-            shadow-sm
-            sm:flex
-          "
-        >
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className="
-                absolute
-                h-full
-                w-full
-                animate-ping
-                rounded-full
-                bg-emerald-400
-                opacity-60
-              "
-            />
-
-            <span
-              className="
-                relative
-                h-2.5
-                w-2.5
-                rounded-full
-                bg-emerald-500
-              "
-            />
-          </span>
-
-          <span className="text-[11px] font-bold text-slate-500">
-            Updated today
-          </span>
-        </div>
-      </div>
-
-      {/* =====================================================
-          COUPON GRID
-      ===================================================== */}
-
-      <div
-        className="
-          grid
-          w-full
-          grid-cols-1
-          items-stretch
-          gap-4
-          sm:grid-cols-2
-          sm:gap-5
-          lg:grid-cols-3
-        "
-      >
-        {coupons.map((coupon) => (
           <div
-            key={coupon.id}
             className="
-              flex
-              min-w-0
+              grid
               w-full
-              max-w-full
+              grid-cols-1
+              items-stretch
+              gap-4
+              sm:grid-cols-2
+              sm:gap-5
+              lg:grid-cols-3
             "
           >
-            <CouponCard coupon={coupon} />
+            {coupons.map((coupon) => (
+              <div key={coupon.id} className="flex min-w-0 w-full max-w-full">
+                <CouponCard coupon={coupon} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          {/* =======================================================
+              MOBILE VIEW ALL
+          ======================================================= */}
+
+          <div className="mt-5 flex justify-center sm:hidden">
+            <Link
+              href="/coupons"
+              className="
+                inline-flex
+                h-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-slate-200
+                bg-white
+                px-5
+                text-xs
+                font-extrabold
+                text-slate-700
+                shadow-sm
+                transition-all
+                duration-200
+                hover:border-emerald-200
+                hover:bg-emerald-50
+                hover:text-emerald-600
+              "
+            >
+              View all coupons →
+            </Link>
+          </div>
+        </>
+      )}
     </section>
   );
 }

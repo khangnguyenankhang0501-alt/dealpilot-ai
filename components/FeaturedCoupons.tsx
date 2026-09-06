@@ -4,15 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 export const revalidate = 0;
 
 export default async function FeaturedCoupons() {
-  /* =========================================================
-     CURRENT DATE
-  ========================================================= */
-
   const today = new Date().toISOString().split("T")[0];
-
-  /* =========================================================
-     FETCH FEATURED COUPONS
-  ========================================================= */
 
   const { data: coupons, error } = await supabase
     .from("coupons")
@@ -35,17 +27,9 @@ export default async function FeaturedCoupons() {
     })
     .limit(10);
 
-  /* =========================================================
-     ERROR HANDLING
-  ========================================================= */
-
   if (error) {
     console.error("Error fetching featured coupons:", error);
   }
-
-  /* =========================================================
-     EMPTY STATE
-  ========================================================= */
 
   if (!coupons || coupons.length === 0) {
     return null;
@@ -57,11 +41,18 @@ export default async function FeaturedCoupons() {
           HEADER
       ===================================================== */}
 
-      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
-        {/* LEFT */}
-
+      <div
+        className="
+          mb-5
+          flex
+          items-end
+          justify-between
+          gap-4
+          sm:mb-6
+        "
+      >
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span
               className="
                 flex
@@ -72,11 +63,11 @@ export default async function FeaturedCoupons() {
                 justify-center
                 rounded-xl
                 bg-amber-50
-                text-base
+                text-sm
                 shadow-sm
                 sm:h-9
                 sm:w-9
-                sm:text-lg
+                sm:text-base
               "
             >
               ⭐
@@ -110,8 +101,6 @@ export default async function FeaturedCoupons() {
           </p>
         </div>
 
-        {/* RIGHT */}
-
         <div
           className="
             hidden
@@ -128,11 +117,14 @@ export default async function FeaturedCoupons() {
             sm:flex
           "
         >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-
-            <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-500" />
-          </span>
+          <span
+            className="
+              h-2
+              w-2
+              rounded-full
+              bg-emerald-500
+            "
+          />
 
           <span className="text-[11px] font-bold text-slate-500">
             Updated today
@@ -146,48 +138,50 @@ export default async function FeaturedCoupons() {
 
       <div
         className="
-  popular-coupons-scroll
-  flex
-  w-full
-  gap-4
-  overflow-x-scroll
-  overflow-y-hidden
-  pb-4
-  pt-1
-  snap-x
-  snap-mandatory
-  scroll-smooth
-  overscroll-x-contain
-  touch-pan-x
-  [-webkit-overflow-scrolling:touch]
+          flex
+          w-full
+          gap-3
+          overflow-x-auto
+          overflow-y-hidden
+          pb-3
+          pt-1
+          snap-x
+          snap-mandatory
+          scroll-smooth
+          overscroll-x-contain
+          touch-pan-x
+          [-webkit-overflow-scrolling:touch]
 
-  [scrollbar-width:auto]
-  [scrollbar-color:#cbd5e1_#f1f5f9]
+          [scrollbar-width:thin]
+          [&::-webkit-scrollbar]:h-1.5
+          [&::-webkit-scrollbar-track]:rounded-full
+          [&::-webkit-scrollbar-track]:bg-slate-100
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          [&::-webkit-scrollbar-thumb]:bg-slate-300
+          hover:[&::-webkit-scrollbar-thumb]:bg-slate-400
 
-  [&::-webkit-scrollbar]:h-3
-  [&::-webkit-scrollbar-track]:rounded-full
-  [&::-webkit-scrollbar-track]:bg-slate-100
-  [&::-webkit-scrollbar-thumb]:rounded-full
-  [&::-webkit-scrollbar-thumb]:bg-slate-300
-  hover:[&::-webkit-scrollbar-thumb]:bg-slate-400
-
-  sm:gap-5
-"
+          sm:gap-4
+        "
       >
         {coupons.map((coupon) => (
           <div
             key={coupon.id}
             className="
-    w-[270px]
-    min-w-[270px]
-    max-w-[270px]
-    shrink-0
-    snap-start
-    self-stretch
-    sm:w-[290px]
-    sm:min-w-[290px]
-    sm:max-w-[290px]
-  "
+              w-[210px]
+              min-w-[210px]
+              max-w-[210px]
+              shrink-0
+              snap-start
+              self-stretch
+
+              sm:w-[190px]
+              sm:min-w-[190px]
+              sm:max-w-[190px]
+
+              lg:w-[calc((100%_-_48px)_/_5)]
+              lg:min-w-[calc((100%_-_48px)_/_5)]
+              lg:max-w-[calc((100%_-_48px)_/_5)]
+            "
           >
             <CouponCard coupon={coupon} />
           </div>
@@ -195,10 +189,10 @@ export default async function FeaturedCoupons() {
       </div>
 
       {/* =====================================================
-          MOBILE SCROLL HINT
+          MOBILE HINT
       ===================================================== */}
 
-      {coupons.length > 2 && (
+      {coupons.length > 5 && (
         <div
           className="
             mt-1

@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { Metadata } from "next";
+
 import CouponCard from "@/components/CouponCard";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -21,7 +23,7 @@ export default async function AllCouponsPage() {
      FETCH ACTIVE COUPONS
   ========================================================= */
 
-  const { data: coupons, error } = await supabase
+  const { data: coupons } = await supabase
     .from("coupons")
     .select(
       `
@@ -41,177 +43,508 @@ export default async function AllCouponsPage() {
       nullsFirst: false,
     });
 
-  /* =========================================================
-     ERROR HANDLING
-  ========================================================= */
-
-  if (error) {
-    console.error("Error fetching all coupons:", error);
-  }
-
   const activeCoupons = coupons ?? [];
 
+  /* =========================================================
+     STATS
+  ========================================================= */
+
+  const verifiedCount = activeCoupons.filter(
+    (coupon) => coupon.verified === true,
+  ).length;
+
+  const promoCodeCount = activeCoupons.filter(
+    (coupon) =>
+      typeof coupon.coupon_code === "string" &&
+      coupon.coupon_code.trim().length > 0,
+  ).length;
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
+
   return (
-    <main className="w-full">
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
+    <main className="w-full bg-white">
+      {/* =======================================================
+          HERO / PAGE HEADER
+      ======================================================= */}
 
       <section className="border-b border-slate-200 bg-slate-50/70">
         <div
           className="
             mx-auto
             w-full
-            max-w-6xl
+            max-w-7xl
             px-4
             py-8
             sm:px-6
             sm:py-10
             lg:px-8
+            lg:py-12
           "
         >
-          {/* BREADCRUMB */}
+          {/* ===================================================
+              BREADCRUMB
+          =================================================== */}
 
-          <div className="mb-4 text-xs font-semibold text-slate-400">
-            Home <span className="mx-1">/</span> Coupons
+          <nav
+            aria-label="Breadcrumb"
+            className="
+              mb-5
+              flex
+              items-center
+              gap-1.5
+              text-[11px]
+              font-semibold
+              text-slate-400
+              sm:text-xs
+            "
+          >
+            <Link href="/" className="transition-colors hover:text-emerald-600">
+              Home
+            </Link>
+
+            <span aria-hidden="true">/</span>
+
+            <span className="text-slate-600">Coupons</span>
+          </nav>
+
+          {/* ===================================================
+              TITLE AREA
+          =================================================== */}
+
+          <div
+            className="
+              flex
+              flex-col
+              gap-5
+              lg:flex-row
+              lg:items-end
+              lg:justify-between
+            "
+          >
+            <div className="max-w-3xl">
+              <div className="flex items-start gap-3">
+                <div
+                  className="
+                    flex
+                    h-11
+                    w-11
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    border
+                    border-emerald-100
+                    bg-emerald-50
+                    text-xl
+                    shadow-sm
+                    sm:h-12
+                    sm:w-12
+                    sm:text-2xl
+                  "
+                >
+                  🏷️
+                </div>
+
+                <div className="min-w-0">
+                  <div
+                    className="
+                      mb-1
+                      text-[10px]
+                      font-black
+                      uppercase
+                      tracking-[0.16em]
+                      text-emerald-600
+                      sm:text-[11px]
+                    "
+                  >
+                    DealPilot Coupons
+                  </div>
+
+                  <h1
+                    className="
+                      text-2xl
+                      font-black
+                      tracking-tight
+                      text-slate-900
+                      sm:text-3xl
+                      lg:text-4xl
+                    "
+                  >
+                    All Coupons & Deals
+                  </h1>
+
+                  <p
+                    className="
+                      mt-2
+                      max-w-2xl
+                      text-sm
+                      leading-6
+                      text-slate-500
+                      sm:text-base
+                    "
+                  >
+                    Browse the latest verified promo codes, discounts, and
+                    shopping deals from stores you love.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* =================================================
+                HOME BUTTON
+            ================================================= */}
+
+            <div className="shrink-0">
+              <Link
+                href="/"
+                className="
+                  inline-flex
+                  h-10
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-4
+                  text-xs
+                  font-extrabold
+                  text-slate-700
+                  shadow-sm
+                  transition-all
+                  duration-200
+                  hover:-translate-y-0.5
+                  hover:border-emerald-200
+                  hover:bg-emerald-50
+                  hover:text-emerald-600
+                "
+              >
+                ← Back to Home
+              </Link>
+            </div>
           </div>
 
-          {/* TITLE */}
+          {/* ===================================================
+              STATS
+          =================================================== */}
 
-          <div className="flex items-start gap-3">
+          <div
+            className="
+              mt-7
+              grid
+              grid-cols-1
+              gap-2.5
+              sm:grid-cols-3
+            "
+          >
+            {/* ACTIVE */}
+
             <div
               className="
                 flex
-                h-10
-                w-10
-                shrink-0
+                min-h-[68px]
                 items-center
-                justify-center
-                rounded-xl
-                bg-emerald-50
-                text-lg
-                shadow-sm
-                sm:h-11
-                sm:w-11
-              "
-            >
-              🏷️
-            </div>
-
-            <div className="min-w-0">
-              <h1
-                className="
-                  text-2xl
-                  font-black
-                  tracking-tight
-                  text-slate-900
-                  sm:text-3xl
-                  lg:text-4xl
-                "
-              >
-                All Coupons & Deals
-              </h1>
-
-              <p
-                className="
-                  mt-1.5
-                  max-w-2xl
-                  text-sm
-                  leading-6
-                  text-slate-500
-                  sm:text-base
-                "
-              >
-                Browse the latest verified discounts, promo codes, and deals
-                from popular online stores.
-              </p>
-            </div>
-          </div>
-
-          {/* STATS */}
-
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            <div
-              className="
-                rounded-full
+                justify-between
+                rounded-2xl
                 border
                 border-slate-200
                 bg-white
-                px-3
-                py-1.5
-                text-xs
-                font-bold
-                text-slate-600
+                px-4
+                py-3
                 shadow-sm
               "
             >
-              {activeCoupons.length} Active Deals
+              <div>
+                <div
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-slate-400
+                  "
+                >
+                  Active Deals
+                </div>
+
+                <div
+                  className="
+                    mt-1
+                    text-xl
+                    font-black
+                    tracking-tight
+                    text-slate-900
+                  "
+                >
+                  {activeCoupons.length}
+                </div>
+              </div>
+
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-slate-50
+                  text-sm
+                "
+              >
+                ⚡
+              </div>
             </div>
+
+            {/* VERIFIED */}
 
             <div
               className="
                 flex
+                min-h-[68px]
                 items-center
-                gap-1.5
-                rounded-full
+                justify-between
+                rounded-2xl
                 border
                 border-emerald-100
-                bg-emerald-50
-                px-3
-                py-1.5
-                text-xs
-                font-bold
-                text-emerald-700
+                bg-emerald-50/60
+                px-4
+                py-3
               "
             >
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Updated live
+              <div>
+                <div
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-emerald-600
+                  "
+                >
+                  Verified
+                </div>
+
+                <div
+                  className="
+                    mt-1
+                    text-xl
+                    font-black
+                    tracking-tight
+                    text-slate-900
+                  "
+                >
+                  {verifiedCount}
+                </div>
+              </div>
+
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-white
+                  text-sm
+                  shadow-sm
+                "
+              >
+                ✓
+              </div>
+            </div>
+
+            {/* PROMO CODES */}
+
+            <div
+              className="
+                flex
+                min-h-[68px]
+                items-center
+                justify-between
+                rounded-2xl
+                border
+                border-cyan-100
+                bg-cyan-50/60
+                px-4
+                py-3
+              "
+            >
+              <div>
+                <div
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-cyan-700
+                  "
+                >
+                  Promo Codes
+                </div>
+
+                <div
+                  className="
+                    mt-1
+                    text-xl
+                    font-black
+                    tracking-tight
+                    text-slate-900
+                  "
+                >
+                  {promoCodeCount}
+                </div>
+              </div>
+
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-white
+                  text-sm
+                  shadow-sm
+                "
+              >
+                %
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          COUPON CONTENT
-      ===================================================== */}
+      {/* =======================================================
+          CONTENT
+      ======================================================= */}
 
       <section
         className="
           mx-auto
           w-full
-          max-w-6xl
+          max-w-7xl
           px-4
           py-8
           sm:px-6
           sm:py-10
           lg:px-8
+          lg:py-12
         "
       >
         {activeCoupons.length > 0 ? (
           <>
-            {/* SECTION HEADER */}
+            {/* =================================================
+                SECTION HEADER
+            ================================================= */}
 
-            <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+            <div
+              className="
+                mb-6
+                flex
+                flex-col
+                gap-3
+                sm:flex-row
+                sm:items-end
+                sm:justify-between
+              "
+            >
               <div>
-                <h2
+                <div
                   className="
-                    text-xl
-                    font-black
-                    tracking-tight
-                    text-slate-900
-                    sm:text-2xl
+                    flex
+                    items-center
+                    gap-2
                   "
                 >
-                  Latest Coupons
-                </h2>
+                  <span
+                    className="
+                      h-2
+                      w-2
+                      rounded-full
+                      bg-emerald-500
+                    "
+                  />
 
-                <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                  <h2
+                    className="
+                      text-xl
+                      font-black
+                      tracking-tight
+                      text-slate-900
+                      sm:text-2xl
+                    "
+                  >
+                    Latest Available Coupons
+                  </h2>
+                </div>
+
+                <p
+                  className="
+                    mt-1.5
+                    text-xs
+                    leading-5
+                    text-slate-500
+                    sm:text-sm
+                  "
+                >
                   Fresh deals currently available on DealPilot.
                 </p>
               </div>
+
+              <div
+                className="
+                  inline-flex
+                  w-fit
+                  items-center
+                  gap-2
+                  rounded-full
+                  border
+                  border-slate-200
+                  bg-white
+                  px-3
+                  py-1.5
+                  text-[10px]
+                  font-bold
+                  text-slate-500
+                  shadow-sm
+                  sm:text-[11px]
+                "
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  <span
+                    className="
+                      absolute
+                      h-full
+                      w-full
+                      animate-ping
+                      rounded-full
+                      bg-emerald-400
+                      opacity-50
+                    "
+                  />
+
+                  <span
+                    className="
+                      relative
+                      h-2.5
+                      w-2.5
+                      rounded-full
+                      bg-emerald-500
+                    "
+                  />
+                </span>
+                Live deals
+              </div>
             </div>
 
-            {/* COUPON GRID */}
+            {/* =================================================
+                COUPON GRID
+            ================================================= */}
 
             <div
               className="
@@ -231,6 +564,93 @@ export default async function AllCouponsPage() {
                 </div>
               ))}
             </div>
+
+            {/* =================================================
+                BOTTOM TRUST BAR
+            ================================================= */}
+
+            <div
+              className="
+                mt-8
+                flex
+                flex-col
+                gap-3
+                rounded-2xl
+                border
+                border-slate-200
+                bg-slate-50
+                px-4
+                py-4
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+                sm:px-5
+              "
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-white
+                    text-sm
+                    shadow-sm
+                  "
+                >
+                  ✓
+                </div>
+
+                <div>
+                  <div
+                    className="
+                      text-xs
+                      font-black
+                      text-slate-900
+                    "
+                  >
+                    Shop smarter with DealPilot
+                  </div>
+
+                  <p
+                    className="
+                      mt-0.5
+                      text-[10px]
+                      leading-5
+                      text-slate-500
+                      sm:text-xs
+                    "
+                  >
+                    Active offers are checked before they are displayed.
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href="/"
+                className="
+                  inline-flex
+                  h-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-slate-900
+                  px-4
+                  text-[10px]
+                  font-extrabold
+                  text-white
+                  transition
+                  hover:bg-slate-700
+                  sm:text-xs
+                "
+              >
+                Explore more deals →
+              </Link>
+            </div>
           </>
         ) : (
           /* =================================================
@@ -240,30 +660,84 @@ export default async function AllCouponsPage() {
           <div
             className="
               flex
-              min-h-[260px]
+              min-h-[320px]
               flex-col
               items-center
               justify-center
-              rounded-2xl
+              rounded-3xl
               border
               border-dashed
               border-slate-300
               bg-slate-50
-              px-5
-              py-12
+              px-6
+              py-14
               text-center
             "
           >
-            <div className="text-4xl">🏷️</div>
+            <div
+              className="
+                flex
+                h-16
+                w-16
+                items-center
+                justify-center
+                rounded-2xl
+                bg-white
+                text-3xl
+                shadow-sm
+              "
+            >
+              🏷️
+            </div>
 
-            <h2 className="mt-4 text-lg font-black text-slate-800">
+            <h2
+              className="
+                mt-5
+                text-lg
+                font-black
+                text-slate-900
+                sm:text-xl
+              "
+            >
               No coupons available
             </h2>
 
-            <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">
-              There are no active coupons available right now. Please check back
-              later for new deals.
+            <p
+              className="
+                mt-2
+                max-w-md
+                text-xs
+                leading-6
+                text-slate-500
+                sm:text-sm
+              "
+            >
+              There are no active coupons available right now. Check back later
+              for new deals and promo codes.
             </p>
+
+            <Link
+              href="/"
+              className="
+                mt-6
+                inline-flex
+                h-10
+                items-center
+                justify-center
+                rounded-xl
+                bg-emerald-500
+                px-5
+                text-xs
+                font-black
+                text-white
+                shadow-sm
+                transition-all
+                hover:bg-emerald-400
+                hover:shadow-md
+              "
+            >
+              Back to Home
+            </Link>
           </div>
         )}
       </section>
