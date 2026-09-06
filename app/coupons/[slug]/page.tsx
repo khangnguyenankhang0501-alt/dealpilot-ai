@@ -12,7 +12,7 @@ type Props = {
 };
 
 /* =========================================================
-   SEO METADATA
+   SEO
 ========================================================= */
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -52,6 +52,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /* =========================================================
+   HELPERS
+========================================================= */
+
+function formatPrice(value?: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  return `$${numberValue.toFixed(2)}`;
+}
+
+function formatExpires(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (!Number.isFinite(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/* =========================================================
    PAGE
 ========================================================= */
 
@@ -60,7 +96,7 @@ export default async function CouponPage({ params }: Props) {
   const slug = resolvedParams?.slug || "";
 
   /* =========================================================
-     FETCH CURRENT COUPON
+     CURRENT COUPON
   ========================================================= */
 
   const { data: coupon, error: couponError } = await supabase
@@ -89,11 +125,30 @@ export default async function CouponPage({ params }: Props) {
 
   if (!coupon) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-16">
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+      <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+        <div
+          className="
+            rounded-[24px]
+            border
+            border-slate-200
+            bg-white
+            px-6
+            py-16
+            text-center
+            shadow-[0_10px_35px_rgba(15,23,42,0.06)]
+          "
+        >
           <div className="text-5xl">🏷️</div>
 
-          <h1 className="mt-5 text-2xl font-black text-slate-900">
+          <h1
+            className="
+              mt-5
+              text-2xl
+              font-black
+              tracking-tight
+              text-slate-900
+            "
+          >
             Coupon not found
           </h1>
 
@@ -117,7 +172,7 @@ export default async function CouponPage({ params }: Props) {
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-400
+              hover:bg-emerald-600
             "
           >
             Browse All Coupons
@@ -141,6 +196,12 @@ export default async function CouponPage({ params }: Props) {
 
   const storeLogo = coupon.stores?.logo_url || null;
 
+  const salePrice = formatPrice(coupon.sale_price);
+
+  const originalPrice = formatPrice(coupon.original_price);
+
+  const expiresAt = formatExpires(coupon.expires_at);
+
   /* =========================================================
      RELATED COUPONS
   ========================================================= */
@@ -148,7 +209,7 @@ export default async function CouponPage({ params }: Props) {
   let relatedCoupons: any[] = [];
 
   if (coupon.store_id) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("coupons")
       .select(
         `
@@ -164,15 +225,23 @@ export default async function CouponPage({ params }: Props) {
       .eq("store_id", coupon.store_id)
       .neq("id", coupon.id)
       .eq("status", "Active")
+      .order("popularity_count", {
+        ascending: false,
+        nullsFirst: false,
+      })
       .order("click_count", {
         ascending: false,
         nullsFirst: false,
       })
       .limit(4);
 
+    if (error) {
+      console.error("Error fetching related coupons:", error);
+    }
+
     relatedCoupons = data || [];
   } else if (coupon.store_name) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("coupons")
       .select(
         `
@@ -188,17 +257,25 @@ export default async function CouponPage({ params }: Props) {
       .eq("store_name", coupon.store_name)
       .neq("id", coupon.id)
       .eq("status", "Active")
+      .order("popularity_count", {
+        ascending: false,
+        nullsFirst: false,
+      })
       .order("click_count", {
         ascending: false,
         nullsFirst: false,
       })
       .limit(4);
 
+    if (error) {
+      console.error("Error fetching related coupons:", error);
+    }
+
     relatedCoupons = data || [];
   }
 
   /* =========================================================
-     STRUCTURED DATA
+     SEO URLS
   ========================================================= */
 
   const siteUrl = "https://dealpilot.com";
@@ -210,7 +287,7 @@ export default async function CouponPage({ params }: Props) {
     : `${siteUrl}/stores`;
 
   /* =========================================================
-     BREADCRUMB SCHEMA
+     STRUCTURED DATA
   ========================================================= */
 
   const breadcrumbSchema = {
@@ -244,10 +321,6 @@ export default async function CouponPage({ params }: Props) {
     ],
   };
 
-  /* =========================================================
-     WEBPAGE SCHEMA
-  ========================================================= */
-
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -255,10 +328,6 @@ export default async function CouponPage({ params }: Props) {
     url: couponUrl,
     description: `${coupon.title} coupon and deal information from ${storeName}.`,
   };
-
-  /* =========================================================
-     FAQ SCHEMA
-  ========================================================= */
 
   const faqSchema = {
     "@context": "https://schema.org",
@@ -295,12 +364,20 @@ export default async function CouponPage({ params }: Props) {
     ],
   };
 
-  /* =========================================================
-     PAGE UI
-  ========================================================= */
-
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-10 lg:px-6">
+    <main
+      className="
+        mx-auto
+        w-full
+        max-w-6xl
+        px-4
+        pb-16
+        pt-6
+        sm:px-6
+        sm:pt-8
+        lg:px-8
+      "
+    >
       {/* =====================================================
           STRUCTURED DATA
       ===================================================== */}
@@ -333,27 +410,24 @@ export default async function CouponPage({ params }: Props) {
       <nav
         aria-label="Breadcrumb"
         className="
-          mb-6
+          mb-5
           flex
           flex-wrap
           items-center
           gap-1.5
-          text-xs
-          font-medium
+          text-[11px]
+          font-semibold
           text-slate-400
-          sm:text-sm
+          sm:text-xs
         "
       >
-        <Link href="/" className="transition-colors hover:text-emerald-600">
+        <Link href="/" className="transition hover:text-emerald-600">
           Home
         </Link>
 
         <span>/</span>
 
-        <Link
-          href="/coupons"
-          className="transition-colors hover:text-emerald-600"
-        >
+        <Link href="/coupons" className="transition hover:text-emerald-600">
           Coupons
         </Link>
 
@@ -362,25 +436,42 @@ export default async function CouponPage({ params }: Props) {
         {storeSlug ? (
           <Link
             href={`/stores/${storeSlug}`}
-            className="max-w-[180px] truncate transition-colors hover:text-emerald-600"
+            className="
+              max-w-[180px]
+              truncate
+              transition
+              hover:text-emerald-600
+            "
           >
             {storeName}
           </Link>
         ) : (
-          <span className="max-w-[180px] truncate text-slate-500">
+          <span
+            className="
+              max-w-[180px]
+              truncate
+              text-slate-500
+            "
+          >
             {storeName}
           </span>
         )}
 
         <span>/</span>
 
-        <span className="max-w-[220px] truncate text-slate-600">
+        <span
+          className="
+            max-w-[260px]
+            truncate
+            text-slate-600
+          "
+        >
           {coupon.title}
         </span>
       </nav>
 
       {/* =====================================================
-          MAIN COUPON CARD
+          MAIN DEAL
       ===================================================== */}
 
       <section
@@ -390,29 +481,67 @@ export default async function CouponPage({ params }: Props) {
           border
           border-slate-200
           bg-white
-          shadow-[0_12px_40px_rgba(15,23,42,0.06)]
+          shadow-[0_12px_40px_rgba(15,23,42,0.07)]
         "
       >
-        <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+        <div
+          className="
+            grid
+            lg:grid-cols-[1fr_0.95fr]
+          "
+        >
           {/* =================================================
-              LEFT - PRODUCT / IMAGE
+              PRODUCT IMAGE
           ================================================= */}
 
           <div
             className="
               relative
-              min-h-[300px]
+              min-h-[320px]
               overflow-hidden
               border-b
               border-slate-100
-              bg-slate-50
-              sm:min-h-[400px]
-              lg:min-h-[540px]
+              bg-gradient-to-br
+              from-slate-50
+              via-white
+              to-slate-100
+              sm:min-h-[430px]
+              lg:min-h-[510px]
               lg:border-b-0
               lg:border-r
             "
           >
-            {/* PRODUCT IMAGE */}
+            {/* Soft glow */}
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -right-20
+                -top-20
+                h-56
+                w-56
+                rounded-full
+                bg-emerald-100/40
+                blur-3xl
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -bottom-20
+                -left-20
+                h-48
+                w-48
+                rounded-full
+                bg-cyan-100/30
+                blur-3xl
+              "
+            />
+
+            {/* Image */}
 
             {coupon.image_url ? (
               <Image
@@ -420,45 +549,39 @@ export default async function CouponPage({ params }: Props) {
                 alt={coupon.title || "Coupon deal"}
                 fill
                 priority
-                sizes="(max-width: 1024px) 100vw, 52vw"
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="
+                  relative
+                  z-[1]
                   object-contain
-                  p-7
-                  sm:p-10
+                  p-8
+                  transition-transform
+                  duration-500
+                  hover:scale-[1.025]
+                  sm:p-12
                   lg:p-14
+                  xl:p-16
                 "
               />
             ) : (
               <div
                 className="
+                  relative
+                  z-[1]
                   flex
                   h-full
-                  min-h-[300px]
+                  min-h-[320px]
                   items-center
                   justify-center
                   text-6xl
-                  sm:min-h-[400px]
+                  sm:min-h-[430px]
                 "
               >
                 🏷️
               </div>
             )}
 
-            {/* SOFT BACKGROUND */}
-
-            <div
-              className="
-                pointer-events-none
-                absolute
-                inset-0
-                bg-gradient-to-br
-                from-white/30
-                via-transparent
-                to-emerald-50/50
-              "
-            />
-
-            {/* DISCOUNT BADGE */}
+            {/* Discount */}
 
             {coupon.discount_value !== null &&
               coupon.discount_value !== undefined && (
@@ -469,23 +592,23 @@ export default async function CouponPage({ params }: Props) {
                     top-4
                     z-10
                     rounded-full
-                    bg-rose-500
+                    bg-emerald-500
                     px-3.5
                     py-2
                     text-xs
                     font-black
                     tracking-wide
                     text-white
-                    shadow-lg
+                    shadow-[0_6px_18px_rgba(16,185,129,0.24)]
                     sm:left-5
                     sm:top-5
                   "
                 >
-                  -{coupon.discount_value}%
+                  {coupon.discount_value}% OFF
                 </div>
               )}
 
-            {/* FAVORITE */}
+            {/* Favorite */}
 
             <div
               className="
@@ -500,7 +623,7 @@ export default async function CouponPage({ params }: Props) {
               <FavoriteButton couponId={String(coupon.id)} />
             </div>
 
-            {/* VERIFIED */}
+            {/* Verified */}
 
             {coupon.verified && (
               <div
@@ -518,8 +641,8 @@ export default async function CouponPage({ params }: Props) {
                   bg-white/95
                   px-3
                   py-1.5
-                  text-xs
-                  font-bold
+                  text-[11px]
+                  font-black
                   text-emerald-600
                   shadow-md
                   backdrop-blur
@@ -542,13 +665,13 @@ export default async function CouponPage({ params }: Props) {
                 >
                   ✓
                 </span>
-                Verified Deal
+                Verified deal
               </div>
             )}
           </div>
 
           {/* =================================================
-              RIGHT - DEAL INFORMATION
+              DEAL INFO
           ================================================= */}
 
           <div
@@ -557,161 +680,207 @@ export default async function CouponPage({ params }: Props) {
               flex-col
               p-5
               sm:p-7
-              lg:p-9
+              lg:p-8
+              xl:p-9
             "
           >
             {/* STORE */}
 
-            <div className="mb-5">
-              {storeSlug ? (
-                <Link
-                  href={`/stores/${storeSlug}`}
+            {storeSlug ? (
+              <Link
+                href={`/stores/${storeSlug}`}
+                className="
+                  group/store
+                  mb-5
+                  flex
+                  w-fit
+                  max-w-full
+                  items-center
+                  gap-2.5
+                  rounded-xl
+                  p-1
+                  transition
+                  hover:bg-slate-50
+                "
+              >
+                <span
                   className="
-                    inline-flex
-                    max-w-full
+                    relative
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
                     items-center
-                    gap-2.5
+                    justify-center
+                    overflow-hidden
                     rounded-xl
-                    transition
-                    hover:opacity-80
+                    border
+                    border-slate-200
+                    bg-white
+                    shadow-sm
                   "
                 >
                   {storeLogo ? (
-                    <span
-                      className="
-                        relative
-                        h-9
-                        w-9
-                        shrink-0
-                        overflow-hidden
-                        rounded-xl
-                        border
-                        border-slate-200
-                        bg-white
-                      "
-                    >
-                      <Image
-                        src={storeLogo}
-                        alt={storeName}
-                        fill
-                        sizes="36px"
-                        className="object-contain p-1"
-                      />
-                    </span>
+                    <Image
+                      src={storeLogo}
+                      alt={storeName}
+                      fill
+                      sizes="40px"
+                      className="object-contain p-1.5"
+                    />
                   ) : (
-                    <span
-                      className="
-                        flex
-                        h-9
-                        w-9
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-slate-100
-                        text-xs
-                        font-black
-                        text-slate-500
-                      "
-                    >
+                    <span className="text-sm font-black text-slate-500">
                       {storeName.charAt(0).toUpperCase()}
                     </span>
                   )}
+                </span>
 
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      Store
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-bold text-slate-700">
-                        {storeName}
-                      </span>
-
-                      {coupon.verified && (
-                        <span
-                          className="
-                            flex
-                            h-4
-                            w-4
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-emerald-100
-                            text-[9px]
-                            font-black
-                            text-emerald-600
-                          "
-                        >
-                          ✓
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ) : (
-                <div className="flex items-center gap-2.5">
+                <span className="min-w-0">
                   <span
                     className="
-                      flex
-                      h-9
-                      w-9
-                      items-center
-                      justify-center
-                      rounded-xl
-                      bg-slate-100
-                      text-xs
-                      font-black
-                      text-slate-500
+                      block
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-slate-400
                     "
                   >
-                    {storeName.charAt(0).toUpperCase()}
+                    Store
                   </span>
 
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      Store
-                    </div>
-
-                    <div className="text-sm font-bold text-slate-700">
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className="
+                        max-w-[180px]
+                        truncate
+                        text-sm
+                        font-extrabold
+                        text-slate-800
+                        group-hover/store:text-emerald-700
+                      "
+                    >
                       {storeName}
-                    </div>
+                    </span>
+
+                    {coupon.verified && (
+                      <span
+                        className="
+                          flex
+                          h-4
+                          w-4
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-emerald-100
+                          text-[9px]
+                          font-black
+                          text-emerald-600
+                        "
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </Link>
+            ) : (
+              <div className="mb-5 flex items-center gap-2.5">
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-slate-100
+                    text-sm
+                    font-black
+                    text-slate-500
+                  "
+                >
+                  {storeName.charAt(0).toUpperCase()}
+                </div>
+
+                <div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                    Store
+                  </div>
+
+                  <div className="text-sm font-extrabold text-slate-800">
+                    {storeName}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* DEAL LABEL */}
+            {/* BADGES */}
 
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div
+              className="
+                mb-3
+                flex
+                flex-wrap
+                items-center
+                gap-2
+              "
+            >
               {coupon.discount_value !== null &&
                 coupon.discount_value !== undefined && (
                   <span
                     className="
                       rounded-full
-                      bg-rose-50
+                      bg-emerald-50
                       px-3
                       py-1
-                      text-xs
+                      text-[10px]
                       font-black
-                      text-rose-600
+                      text-emerald-700
+                      ring-1
+                      ring-inset
+                      ring-emerald-100
                     "
                   >
                     {coupon.discount_value}% OFF
                   </span>
                 )}
 
+              {coupon.coupon_code && (
+                <span
+                  className="
+                    rounded-full
+                    bg-orange-50
+                    px-3
+                    py-1
+                    text-[10px]
+                    font-black
+                    text-orange-600
+                    ring-1
+                    ring-inset
+                    ring-orange-100
+                  "
+                >
+                  COUPON
+                </span>
+              )}
+
               {coupon.badge && (
                 <span
                   className="
+                    max-w-[180px]
+                    truncate
                     rounded-full
                     bg-cyan-50
                     px-3
                     py-1
-                    text-xs
+                    text-[10px]
                     font-bold
                     text-cyan-700
+                    ring-1
+                    ring-inset
+                    ring-cyan-100
                   "
                 >
                   {coupon.badge}
@@ -723,14 +892,13 @@ export default async function CouponPage({ params }: Props) {
 
             <h1
               className="
-                max-w-2xl
-                text-2xl
+                text-[25px]
                 font-black
-                leading-[1.15]
-                tracking-tight
-                text-slate-900
+                leading-[1.16]
+                tracking-[-0.025em]
+                text-slate-950
                 sm:text-3xl
-                lg:text-[38px]
+                lg:text-[35px]
               "
             >
               {coupon.title}
@@ -738,55 +906,81 @@ export default async function CouponPage({ params }: Props) {
 
             {/* PRICE */}
 
-            <div className="mt-6">
-              {coupon.sale_price !== null && coupon.sale_price !== undefined ? (
-                <div className="flex flex-wrap items-baseline gap-3">
+            <div className="mt-5">
+              {salePrice ? (
+                <div className="flex flex-wrap items-end gap-3">
                   <span
                     className="
-                      text-3xl
+                      text-[32px]
                       font-black
-                      tracking-tight
-                      text-slate-900
-                      sm:text-4xl
+                      leading-none
+                      tracking-[-0.03em]
+                      text-slate-950
+                      sm:text-[38px]
                     "
                   >
-                    ${Number(coupon.sale_price).toFixed(2)}
+                    {salePrice}
                   </span>
 
-                  {coupon.original_price !== null &&
-                    coupon.original_price !== undefined && (
-                      <span
-                        className="
-                          text-base
-                          font-medium
-                          text-slate-400
-                          line-through
-                          sm:text-lg
-                        "
-                      >
-                        ${Number(coupon.original_price).toFixed(2)}
-                      </span>
-                    )}
+                  {originalPrice && (
+                    <span
+                      className="
+                        pb-1
+                        text-sm
+                        font-medium
+                        text-slate-400
+                        line-through
+                        sm:text-base
+                      "
+                    >
+                      {originalPrice}
+                    </span>
+                  )}
                 </div>
               ) : (
-                <span className="text-lg font-extrabold text-slate-700">
-                  See deal price
+                <span
+                  className="
+                    text-xl
+                    font-black
+                    text-slate-800
+                  "
+                >
+                  See deal
                 </span>
               )}
+
+              {coupon.discount_value !== null &&
+                coupon.discount_value !== undefined &&
+                salePrice &&
+                originalPrice && (
+                  <div className="mt-2">
+                    <span
+                      className="
+                        text-[10px]
+                        font-black
+                        uppercase
+                        tracking-[0.12em]
+                        text-emerald-600
+                      "
+                    >
+                      Save {coupon.discount_value}%
+                    </span>
+                  </div>
+                )}
             </div>
 
-            {/* COUPON CODE PREVIEW */}
+            {/* CODE PREVIEW */}
 
-            {coupon.coupon_code && (
+            {coupon.coupon_code ? (
               <div
                 className="
-                  mt-6
+                  mt-5
                   overflow-hidden
-                  rounded-2xl
+                  rounded-[18px]
                   border
                   border-dashed
                   border-emerald-300
-                  bg-emerald-50
+                  bg-emerald-50/70
                 "
               >
                 <div
@@ -794,65 +988,65 @@ export default async function CouponPage({ params }: Props) {
                     flex
                     items-center
                     justify-between
-                    gap-4
+                    gap-3
                     px-4
-                    py-3
+                    py-3.5
                     sm:px-5
                   "
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div
                       className="
-                        text-[10px]
-                        font-extrabold
+                        text-[9px]
+                        font-black
                         uppercase
-                        tracking-widest
+                        tracking-[0.16em]
                         text-emerald-600
                       "
                     >
-                      Coupon Code
+                      Coupon code
                     </div>
 
                     <div
                       className="
                         mt-1
-                        text-xl
+                        truncate
+                        font-mono
+                        text-[18px]
                         font-black
-                        tracking-[0.14em]
+                        tracking-[0.18em]
                         text-slate-900
-                        sm:text-2xl
+                        sm:text-xl
                       "
                     >
-                      {coupon.coupon_code.slice(0, 4)}••••
+                      {coupon.coupon_code.slice(0, 4)}
+                      ••••
                     </div>
                   </div>
 
-                  <div
+                  <span
                     className="
                       shrink-0
                       rounded-lg
                       bg-white
                       px-2.5
                       py-1.5
-                      text-[10px]
-                      font-bold
+                      text-[9px]
+                      font-black
+                      tracking-wider
                       text-emerald-600
                       shadow-sm
                     "
                   >
                     CODE
-                  </div>
+                  </span>
                 </div>
               </div>
-            )}
-
-            {/* NO CODE */}
-
-            {!coupon.coupon_code && (
+            ) : (
               <div
                 className="
-                  mt-6
-                  rounded-2xl
+                  mt-5
+                  rounded-[18px]
                   border
                   border-slate-200
                   bg-slate-50
@@ -860,19 +1054,19 @@ export default async function CouponPage({ params }: Props) {
                   py-4
                 "
               >
-                <div className="text-sm font-bold text-slate-700">
+                <div className="text-sm font-black text-slate-800">
                   No coupon code required
                 </div>
 
-                <div className="mt-1 text-xs text-slate-500">
-                  Continue to the store to claim this deal.
-                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Continue to {storeName} to claim this deal.
+                </p>
               </div>
             )}
 
             {/* CTA */}
 
-            <div className="mt-5">
+            <div className="mt-4">
               <GetCodeButton
                 couponId={String(coupon.id)}
                 couponCode={coupon.coupon_code}
@@ -880,107 +1074,87 @@ export default async function CouponPage({ params }: Props) {
               />
             </div>
 
-            {/* TRUST INFORMATION */}
+            {/* TRUST */}
 
             <div
               className="
-                mt-6
+                mt-5
                 border-t
                 border-slate-100
-                pt-5
+                pt-4
               "
             >
               <div
                 className="
-                  grid
-                  grid-cols-2
-                  gap-x-5
-                  gap-y-3
-                  text-xs
-                  sm:text-sm
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-x-4
+                  gap-y-2
+                  text-[10px]
+                  font-semibold
+                  text-slate-500
+                  sm:text-[11px]
                 "
               >
                 {coupon.verified && (
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="
-                        flex
-                        h-6
-                        w-6
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-emerald-100
-                        text-[10px]
-                        font-black
-                        text-emerald-600
-                      "
-                    >
+                  <span className="inline-flex items-center gap-1 text-emerald-600">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[8px] font-black">
                       ✓
                     </span>
+                    Verified
+                  </span>
+                )}
 
-                    <span className="font-semibold text-slate-600">
-                      Verified
+                {coupon.rating !== null && coupon.rating !== undefined && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-amber-400">★</span>
+
+                    <span className="font-bold text-slate-700">
+                      {Number(coupon.rating).toFixed(1)}
                     </span>
-                  </div>
+
+                    {coupon.review_count !== null &&
+                      coupon.review_count !== undefined && (
+                        <span className="text-slate-400">
+                          ({coupon.review_count})
+                        </span>
+                      )}
+                  </span>
                 )}
 
                 {coupon.popularity_count !== null &&
                   coupon.popularity_count !== undefined &&
                   Number(coupon.popularity_count) > 0 && (
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <span>🔥</span>
-                      <span>{coupon.popularity_count} clicks</span>
-                    </div>
+                    <span>🔥 {coupon.popularity_count} clicks</span>
                   )}
-
-                {coupon.rating !== null && coupon.rating !== undefined && (
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <span>⭐</span>
-
-                    <span>
-                      {Number(coupon.rating).toFixed(1)}
-                      {coupon.review_count !== null &&
-                        coupon.review_count !== undefined && (
-                          <span className="ml-1 text-slate-400">
-                            ({coupon.review_count})
-                          </span>
-                        )}
-                    </span>
-                  </div>
-                )}
-
-                {coupon.shipping_text && (
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <span>🚚</span>
-                    <span>{coupon.shipping_text}</span>
-                  </div>
-                )}
-
-                {coupon.sold_text && (
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <span>📦</span>
-                    <span>{coupon.sold_text}</span>
-                  </div>
-                )}
-
-                {coupon.expires_at && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <span>⏳</span>
-                    <span>Expires: {coupon.expires_at}</span>
-                  </div>
-                )}
               </div>
+
+              {expiresAt && (
+                <div
+                  className="
+                    mt-2
+                    flex
+                    items-center
+                    gap-1.5
+                    text-[10px]
+                    font-medium
+                    text-slate-400
+                  "
+                >
+                  <span>⏳</span>
+                  Expires {expiresAt}
+                </div>
+              )}
             </div>
 
-            {/* SMALL TRUST MESSAGE */}
+            {/* TRUST MESSAGE */}
 
             <div
               className="
                 mt-auto
-                pt-6
-                text-[11px]
+                pt-5
+                text-[10px]
                 leading-5
                 text-slate-400
               "
@@ -991,251 +1165,177 @@ export default async function CouponPage({ params }: Props) {
           </div>
         </div>
       </section>
+
       {/* =====================================================
           HOW TO USE
       ===================================================== */}
 
       <section
         className="
-          mt-8
+          mt-7
+          overflow-hidden
           rounded-[24px]
           border
           border-slate-200
           bg-white
-          p-5
           shadow-[0_8px_30px_rgba(15,23,42,0.04)]
-          sm:mt-10
-          sm:p-7
-          lg:p-8
+          sm:mt-9
         "
       >
-        {/* SECTION HEADER */}
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div
-              className="
-                mb-2
-                inline-flex
-                items-center
-                rounded-full
-                bg-emerald-50
-                px-3
-                py-1
-                text-[10px]
-                font-black
-                uppercase
-                tracking-widest
-                text-emerald-600
-              "
-            >
-              Easy to use
-            </div>
-
-            <h2
-              className="
-                text-xl
-                font-black
-                tracking-tight
-                text-slate-900
-                sm:text-2xl
-              "
-            >
-              How to use this coupon
-            </h2>
-
-            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
-              Follow these simple steps to save at checkout.
-            </p>
-          </div>
-        </div>
-
-        {/* STEPS */}
-
         <div
           className="
-            mt-6
-            grid
-            gap-3
-            sm:grid-cols-2
-            lg:grid-cols-4
-            lg:gap-4
+            border-b
+            border-slate-100
+            bg-gradient-to-r
+            from-emerald-50/70
+            via-white
+            to-white
+            px-5
+            py-5
+            sm:px-7
+            sm:py-6
           "
         >
-          {/* STEP 1 */}
-
           <div
             className="
-              relative
-              rounded-2xl
-              border
-              border-slate-100
-              bg-slate-50
-              p-4
-              transition
-              hover:border-emerald-100
-              hover:bg-emerald-50/40
+              inline-flex
+              rounded-full
+              bg-emerald-50
+              px-3
+              py-1
+              text-[9px]
+              font-black
+              uppercase
+              tracking-[0.16em]
+              text-emerald-600
             "
           >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-emerald-500
-                text-sm
-                font-black
-                text-white
-                shadow-sm
-              "
-            >
-              01
-            </div>
-
-            <h3 className="mt-4 text-sm font-black text-slate-900">
-              Get the code
-            </h3>
-
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">
-              Click the GET CODE button above to reveal the available coupon.
-            </p>
+            Easy to use
           </div>
 
-          {/* STEP 2 */}
-
-          <div
+          <h2
             className="
-              relative
-              rounded-2xl
-              border
-              border-slate-100
-              bg-slate-50
-              p-4
-              transition
-              hover:border-emerald-100
-              hover:bg-emerald-50/40
+              mt-2
+              text-xl
+              font-black
+              tracking-tight
+              text-slate-900
+              sm:text-2xl
             "
           >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-slate-900
-                text-sm
-                font-black
-                text-white
-                shadow-sm
-              "
-            >
-              02
-            </div>
+            How to use this coupon
+          </h2>
 
-            <h3 className="mt-4 text-sm font-black text-slate-900">
-              Copy the code
-            </h3>
-
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">
-              Copy the coupon code so you can use it during checkout.
-            </p>
-          </div>
-
-          {/* STEP 3 */}
-
-          <div
-            className="
-              relative
-              rounded-2xl
-              border
-              border-slate-100
-              bg-slate-50
-              p-4
-              transition
-              hover:border-emerald-100
-              hover:bg-emerald-50/40
-            "
-          >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-orange-500
-                text-sm
-                font-black
-                text-white
-                shadow-sm
-              "
-            >
-              03
-            </div>
-
-            <h3 className="mt-4 text-sm font-black text-slate-900">
-              Visit {storeName}
-            </h3>
-
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">
-              Continue to the store and add the eligible product to your cart.
-            </p>
-          </div>
-
-          {/* STEP 4 */}
-
-          <div
-            className="
-              relative
-              rounded-2xl
-              border
-              border-slate-100
-              bg-slate-50
-              p-4
-              transition
-              hover:border-emerald-100
-              hover:bg-emerald-50/40
-            "
-          >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-emerald-500
-                text-sm
-                font-black
-                text-white
-                shadow-sm
-              "
-            >
-              04
-            </div>
-
-            <h3 className="mt-4 text-sm font-black text-slate-900">
-              Apply at checkout
-            </h3>
-
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">
-              Enter the code at checkout and enjoy your available savings.
-            </p>
-          </div>
+          <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+            Follow these simple steps to save at checkout.
+          </p>
         </div>
-
-        {/* TIP */}
 
         <div
           className="
-            mt-5
+            grid
+            gap-3
+            p-5
+            sm:grid-cols-2
+            sm:p-7
+            lg:grid-cols-4
+          "
+        >
+          {[
+            {
+              number: "01",
+              title: "Get the code",
+              text: "Click the GET CODE button above to reveal the available coupon.",
+              icon: "%",
+              style: "bg-emerald-500 text-white",
+            },
+            {
+              number: "02",
+              title: "Copy the code",
+              text: "Copy the coupon code so you can use it during checkout.",
+              icon: "↗",
+              style: "bg-slate-900 text-white",
+            },
+            {
+              number: "03",
+              title: `Visit ${storeName}`,
+              text: "Continue to the store and add the eligible product to your cart.",
+              icon: "→",
+              style: "bg-orange-500 text-white",
+            },
+            {
+              number: "04",
+              title: "Apply at checkout",
+              text: "Enter the code at checkout and enjoy your available savings.",
+              icon: "✓",
+              style: "bg-emerald-500 text-white",
+            },
+          ].map((step) => (
+            <div
+              key={step.number}
+              className="
+                rounded-2xl
+                border
+                border-slate-100
+                bg-slate-50
+                p-4
+                transition
+                hover:border-emerald-100
+                hover:bg-emerald-50/40
+              "
+            >
+              <div
+                className={`
+                  flex
+                  h-10
+                  w-10
+                  items-center
+                  justify-center
+                  rounded-xl
+                  text-xs
+                  font-black
+                  shadow-sm
+                  ${step.style}
+                `}
+              >
+                {step.number}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2">
+                <span
+                  className="
+                    flex
+                    h-7
+                    w-7
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-white
+                    text-xs
+                    font-black
+                    text-slate-700
+                    shadow-sm
+                  "
+                >
+                  {step.icon}
+                </span>
+
+                <h3 className="text-sm font-black text-slate-900">
+                  {step.title}
+                </h3>
+              </div>
+
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {step.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div
+          className="
+            mx-5
+            mb-5
             flex
             items-start
             gap-3
@@ -1245,6 +1345,8 @@ export default async function CouponPage({ params }: Props) {
             bg-amber-50
             px-4
             py-3.5
+            sm:mx-7
+            sm:mb-7
           "
         >
           <span
@@ -1282,104 +1384,77 @@ export default async function CouponPage({ params }: Props) {
 
       <section
         className="
-          mt-8
+          mt-7
+          overflow-hidden
           rounded-[24px]
           border
           border-slate-200
           bg-white
-          p-5
           shadow-[0_8px_30px_rgba(15,23,42,0.04)]
-          sm:mt-10
-          sm:p-7
-          lg:p-8
+          sm:mt-9
         "
       >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div
-              className="
-                mb-2
-                inline-flex
-                items-center
-                rounded-full
-                bg-slate-100
-                px-3
-                py-1
-                text-[10px]
-                font-black
-                uppercase
-                tracking-widest
-                text-slate-600
-              "
-            >
-              Deal information
-            </div>
-
-            <h2
-              className="
-                text-xl
-                font-black
-                tracking-tight
-                text-slate-900
-                sm:text-2xl
-              "
-            >
-              Coupon details
-            </h2>
-
-            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
-              Everything you need to know before using this deal.
-            </p>
+        <div className="px-5 py-5 sm:px-7 sm:py-6">
+          <div
+            className="
+              inline-flex
+              rounded-full
+              bg-slate-100
+              px-3
+              py-1
+              text-[9px]
+              font-black
+              uppercase
+              tracking-[0.16em]
+              text-slate-600
+            "
+          >
+            Deal information
           </div>
 
-          {coupon.verified && (
-            <div
-              className="
-                inline-flex
-                w-fit
-                items-center
-                gap-2
-                rounded-full
-                border
-                border-emerald-100
-                bg-emerald-50
-                px-3
-                py-1.5
-                text-[10px]
-                font-black
-                text-emerald-700
-              "
-            >
-              <span
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2
                 className="
-                  flex
-                  h-4
-                  w-4
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-emerald-500
-                  text-[9px]
-                  text-white
+                  text-xl
+                  font-black
+                  tracking-tight
+                  text-slate-900
+                  sm:text-2xl
                 "
               >
-                ✓
-              </span>
-              Verified deal
+                Coupon details
+              </h2>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                Everything you need to know before using this deal.
+              </p>
             </div>
-          )}
+
+            {coupon.verified && (
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  rounded-full
+                  bg-emerald-50
+                  px-3
+                  py-1.5
+                  text-[10px]
+                  font-black
+                  text-emerald-700
+                "
+              >
+                ✓ Verified deal
+              </span>
+            )}
+          </div>
         </div>
 
-        <div
-          className="
-            mt-6
-            overflow-hidden
-            rounded-2xl
-            border
-            border-slate-100
-          "
-        >
-          {/* Store */}
+        <div className="border-t border-slate-100">
+          {/* STORE */}
+
           <div
             className="
               flex
@@ -1389,9 +1464,9 @@ export default async function CouponPage({ params }: Props) {
               border-b
               border-slate-100
               bg-slate-50/70
-              px-4
+              px-5
               py-4
-              sm:px-5
+              sm:px-7
             "
           >
             <div className="flex min-w-0 items-center gap-3">
@@ -1414,7 +1489,12 @@ export default async function CouponPage({ params }: Props) {
                   <img
                     src={storeLogo}
                     alt={storeName}
-                    className="h-full w-full object-contain p-1.5"
+                    className="
+                      h-full
+                      w-full
+                      object-contain
+                      p-1.5
+                    "
                   />
                 ) : (
                   <span className="text-sm font-black text-slate-500">
@@ -1424,7 +1504,7 @@ export default async function CouponPage({ params }: Props) {
               </div>
 
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Store
                 </p>
 
@@ -1448,6 +1528,7 @@ export default async function CouponPage({ params }: Props) {
                   text-[10px]
                   font-extrabold
                   text-slate-600
+                  shadow-sm
                   transition
                   hover:border-emerald-200
                   hover:bg-emerald-50
@@ -1459,7 +1540,8 @@ export default async function CouponPage({ params }: Props) {
             )}
           </div>
 
-          {/* Coupon type */}
+          {/* DEAL TYPE + SAVINGS */}
+
           <div
             className="
               grid
@@ -1471,9 +1553,19 @@ export default async function CouponPage({ params }: Props) {
               sm:divide-y-0
             "
           >
-            <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-4
+                px-5
+                py-4
+                sm:px-7
+              "
+            >
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Deal type
                 </p>
 
@@ -1488,8 +1580,8 @@ export default async function CouponPage({ params }: Props) {
                   bg-emerald-50
                   px-2.5
                   py-1
-                  text-[10px]
-                  font-extrabold
+                  text-[9px]
+                  font-black
                   text-emerald-700
                 "
               >
@@ -1497,9 +1589,19 @@ export default async function CouponPage({ params }: Props) {
               </span>
             </div>
 
-            <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-4
+                px-5
+                py-4
+                sm:px-7
+              "
+            >
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Savings
                 </p>
 
@@ -1517,8 +1619,8 @@ export default async function CouponPage({ params }: Props) {
                   bg-orange-50
                   px-2.5
                   py-1
-                  text-[10px]
-                  font-extrabold
+                  text-[9px]
+                  font-black
                   text-orange-600
                 "
               >
@@ -1527,7 +1629,8 @@ export default async function CouponPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Price */}
+          {/* PRICE */}
+
           {(coupon.sale_price || coupon.original_price) && (
             <div
               className="
@@ -1542,33 +1645,30 @@ export default async function CouponPage({ params }: Props) {
                 sm:divide-y-0
               "
             >
-              <div className="px-4 py-4 sm:px-5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="px-5 py-4 sm:px-7">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Deal price
                 </p>
 
-                <p className="mt-1 text-lg font-black tracking-tight text-slate-900">
-                  {coupon.sale_price
-                    ? `$${Number(coupon.sale_price).toFixed(2)}`
-                    : "See offer"}
+                <p className="mt-1 text-lg font-black text-slate-900">
+                  {salePrice || "See offer"}
                 </p>
               </div>
 
-              <div className="px-4 py-4 sm:px-5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="px-5 py-4 sm:px-7">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Original price
                 </p>
 
                 <p className="mt-1 text-sm font-bold text-slate-400 line-through">
-                  {coupon.original_price
-                    ? `$${Number(coupon.original_price).toFixed(2)}`
-                    : "Not listed"}
+                  {originalPrice || "Not listed"}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Status */}
+          {/* STATUS */}
+
           <div
             className="
               grid
@@ -1582,7 +1682,7 @@ export default async function CouponPage({ params }: Props) {
               sm:divide-y-0
             "
           >
-            <div className="flex items-center gap-3 px-4 py-4 sm:px-5">
+            <div className="flex items-center gap-3 px-5 py-4 sm:px-7">
               <span
                 className="
                   flex
@@ -1600,17 +1700,17 @@ export default async function CouponPage({ params }: Props) {
               </span>
 
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Availability
                 </p>
 
-                <p className="mt-0.5 text-xs font-bold text-emerald-700">
+                <p className="mt-0.5 text-xs font-black text-emerald-700">
                   Active deal
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-4 sm:px-5">
+            <div className="flex items-center gap-3 px-5 py-4 sm:px-7">
               <span
                 className="
                   flex
@@ -1628,11 +1728,11 @@ export default async function CouponPage({ params }: Props) {
               </span>
 
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   Trust
                 </p>
 
-                <p className="mt-0.5 text-xs font-bold text-slate-700">
+                <p className="mt-0.5 text-xs font-black text-slate-700">
                   {coupon.verified
                     ? "Verified by DealPilot"
                     : "Listed on DealPilot"}
@@ -1642,35 +1742,20 @@ export default async function CouponPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Bottom note */}
         <div
           className="
-            mt-5
             flex
             items-start
             gap-3
-            rounded-2xl
-            border
+            border-t
             border-slate-100
-            bg-slate-50
-            px-4
-            py-3.5
+            bg-slate-50/70
+            px-5
+            py-4
+            sm:px-7
           "
         >
-          <span
-            className="
-              flex
-              h-7
-              w-7
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              bg-white
-              text-sm
-              shadow-sm
-            "
-          >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm shadow-sm">
             ℹ️
           </span>
 
@@ -1688,18 +1773,16 @@ export default async function CouponPage({ params }: Props) {
 
       <section
         className="
-          mt-8
+          mt-7
           overflow-hidden
           rounded-[24px]
           border
           border-slate-200
           bg-white
           shadow-[0_8px_30px_rgba(15,23,42,0.04)]
-          sm:mt-10
+          sm:mt-9
         "
       >
-        {/* HEADER */}
-
         <div
           className="
             border-b
@@ -1712,7 +1795,6 @@ export default async function CouponPage({ params }: Props) {
             py-5
             sm:px-7
             sm:py-6
-            lg:px-8
           "
         >
           <div className="flex items-start gap-4">
@@ -1727,6 +1809,7 @@ export default async function CouponPage({ params }: Props) {
                 rounded-2xl
                 bg-emerald-500
                 text-lg
+                font-black
                 text-white
                 shadow-sm
               "
@@ -1734,22 +1817,14 @@ export default async function CouponPage({ params }: Props) {
               ✓
             </div>
 
-            <div className="min-w-0">
-              <div
-                className="
-                  mb-1.5
-                  text-[10px]
-                  font-black
-                  uppercase
-                  tracking-widest
-                  text-emerald-600
-                "
-              >
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-600">
                 Deal overview
               </div>
 
               <h2
                 className="
+                  mt-1.5
                   text-xl
                   font-black
                   tracking-tight
@@ -1767,17 +1842,13 @@ export default async function CouponPage({ params }: Props) {
           </div>
         </div>
 
-        {/* CONTENT */}
-
-        <div className="px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
+        <div className="px-5 py-6 sm:px-7 sm:py-7">
           <p className="text-sm leading-7 text-slate-600 sm:text-[15px]">
             Save with this deal from{" "}
             <strong className="font-bold text-slate-900">{storeName}</strong>.
             This offer is available through DealPilot and may help you reduce
             the price of your eligible purchase.
           </p>
-
-          {/* HIGHLIGHTS */}
 
           <div
             className="
@@ -1788,43 +1859,14 @@ export default async function CouponPage({ params }: Props) {
               lg:grid-cols-3
             "
           >
-            {/* SAVINGS */}
-
-            <div
-              className="
-                rounded-2xl
-                border
-                border-slate-100
-                bg-slate-50
-                p-4
-              "
-            >
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center gap-3">
-                <div
-                  className="
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-emerald-100
-                    text-sm
-                  "
-                >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-sm font-black">
                   %
                 </div>
 
                 <div>
-                  <p
-                    className="
-                      text-[10px]
-                      font-bold
-                      uppercase
-                      tracking-wider
-                      text-slate-400
-                    "
-                  >
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     Savings
                   </p>
 
@@ -1838,47 +1880,14 @@ export default async function CouponPage({ params }: Props) {
               </div>
             </div>
 
-            {/* STORE */}
-
-            <div
-              className="
-                rounded-2xl
-                border
-                border-slate-100
-                bg-slate-50
-                p-4
-              "
-            >
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center gap-3">
-                <div
-                  className="
-                    flex
-                    h-9
-                    w-9
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-white
-                    text-sm
-                    font-black
-                    text-slate-500
-                    shadow-sm
-                  "
-                >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-500 shadow-sm">
                   {storeName.charAt(0).toUpperCase() || "S"}
                 </div>
 
                 <div className="min-w-0">
-                  <p
-                    className="
-                      text-[10px]
-                      font-bold
-                      uppercase
-                      tracking-wider
-                      text-slate-400
-                    "
-                  >
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     Store
                   </p>
 
@@ -1889,45 +1898,14 @@ export default async function CouponPage({ params }: Props) {
               </div>
             </div>
 
-            {/* VERIFICATION */}
-
-            <div
-              className="
-                rounded-2xl
-                border
-                border-slate-100
-                bg-slate-50
-                p-4
-              "
-            >
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center gap-3">
-                <div
-                  className="
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-emerald-100
-                    text-sm
-                    font-black
-                    text-emerald-600
-                  "
-                >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-sm font-black text-emerald-600">
                   ✓
                 </div>
 
                 <div>
-                  <p
-                    className="
-                      text-[10px]
-                      font-bold
-                      uppercase
-                      tracking-wider
-                      text-slate-400
-                    "
-                  >
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     Verification
                   </p>
 
@@ -1939,29 +1917,18 @@ export default async function CouponPage({ params }: Props) {
             </div>
           </div>
 
-          {/* DESCRIPTION BOX */}
-
           <div
             className="
               mt-5
               rounded-2xl
               border
               border-slate-100
-              bg-white
+              bg-slate-50
               p-4
               sm:p-5
             "
           >
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-                text-xs
-                font-black
-                text-slate-900
-              "
-            >
+            <div className="flex items-center gap-2 text-xs font-black text-slate-900">
               <span
                 className="
                   flex
@@ -1970,8 +1937,9 @@ export default async function CouponPage({ params }: Props) {
                   items-center
                   justify-center
                   rounded-lg
-                  bg-slate-100
+                  bg-white
                   text-sm
+                  shadow-sm
                 "
               >
                 🛍️
@@ -1986,8 +1954,6 @@ export default async function CouponPage({ params }: Props) {
               your order.
             </p>
           </div>
-
-          {/* VERIFIED MESSAGE */}
 
           {coupon.verified && (
             <div
@@ -2044,18 +2010,16 @@ export default async function CouponPage({ params }: Props) {
 
       <section
         className="
-          mt-8
+          mt-7
           overflow-hidden
           rounded-[24px]
           border
           border-slate-200
           bg-white
           shadow-[0_8px_30px_rgba(15,23,42,0.04)]
-          sm:mt-10
+          sm:mt-9
         "
       >
-        {/* HEADER */}
-
         <div
           className="
             border-b
@@ -2068,7 +2032,6 @@ export default async function CouponPage({ params }: Props) {
             py-5
             sm:px-7
             sm:py-6
-            lg:px-8
           "
         >
           <div className="flex items-start gap-4">
@@ -2085,28 +2048,19 @@ export default async function CouponPage({ params }: Props) {
                 text-lg
                 font-black
                 text-white
-                shadow-sm
               "
             >
               ?
             </div>
 
-            <div className="min-w-0">
-              <div
-                className="
-                  mb-1.5
-                  text-[10px]
-                  font-black
-                  uppercase
-                  tracking-widest
-                  text-emerald-600
-                "
-              >
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-600">
                 Need to know
               </div>
 
               <h2
                 className="
+                  mt-1.5
                   text-xl
                   font-black
                   tracking-tight
@@ -2124,236 +2078,104 @@ export default async function CouponPage({ params }: Props) {
           </div>
         </div>
 
-        {/* ACCORDION */}
-
         <div className="divide-y divide-slate-100">
-          {/* QUESTION 1 */}
-
-          <details
-            className="
-              group
-              px-5
-              sm:px-7
-              lg:px-8
-            "
-          >
-            <summary
-              className="
-                flex
-                cursor-pointer
-                list-none
-                items-center
-                justify-between
-                gap-4
-                py-5
-                outline-none
-                marker:hidden
-              "
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-emerald-50
-                    text-xs
-                    font-black
-                    text-emerald-600
-                  "
-                >
-                  01
-                </span>
-
-                <span className="text-sm font-black leading-5 text-slate-900 sm:text-[15px]">
-                  How do I use this coupon?
-                </span>
-              </div>
-
-              <span
+          {[
+            {
+              number: "01",
+              question: "How do I use this coupon?",
+              color: "bg-emerald-50 text-emerald-600",
+              answer: (
+                <>
+                  Click the GET CODE button above, copy the coupon code,
+                  continue to{" "}
+                  <strong className="font-bold text-slate-800">
+                    {storeName}
+                  </strong>
+                  , and enter the code during checkout.
+                </>
+              ),
+            },
+            {
+              number: "02",
+              question: "Is this coupon verified?",
+              color: "bg-slate-100 text-slate-600",
+              answer: coupon.verified
+                ? "Yes. This coupon is currently marked as verified by DealPilot."
+                : "This coupon is currently listed on DealPilot but has not been marked as verified.",
+            },
+            {
+              number: "03",
+              question: "When does this coupon expire?",
+              color: "bg-orange-50 text-orange-600",
+              answer: coupon.expires_at
+                ? `This coupon is currently listed with an expiration date of ${coupon.expires_at}.`
+                : "An expiration date is not currently available for this coupon.",
+            },
+            {
+              number: "04",
+              question: "Does the coupon work on every product?",
+              color: "bg-emerald-50 text-emerald-600",
+              answer:
+                "Not necessarily. Some coupons may only apply to selected products, categories, sellers or orders. Minimum purchase requirements and other exclusions may also apply.",
+            },
+            {
+              number: "05",
+              question: "What should I do if the coupon does not work?",
+              color: "bg-slate-100 text-slate-600",
+              answer: (
+                <>
+                  Make sure the coupon has been entered correctly and that the
+                  order meets the store&apos;s conditions. Also check whether
+                  the offer has expired or has product restrictions.
+                </>
+              ),
+            },
+          ].map((item) => (
+            <details key={item.number} className="group px-5 sm:px-7">
+              <summary
                 className="
                   flex
-                  h-8
-                  w-8
-                  shrink-0
+                  cursor-pointer
+                  list-none
                   items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-white
-                  text-lg
-                  font-medium
-                  leading-none
-                  text-slate-500
-                  transition-all
-                  duration-200
-                  group-open:rotate-45
-                  group-open:border-emerald-200
-                  group-open:bg-emerald-50
-                  group-open:text-emerald-600
+                  justify-between
+                  gap-4
+                  py-4.5
+                  outline-none
+                  marker:hidden
                 "
               >
-                +
-              </span>
-            </summary>
-
-            <div className="pb-5 pl-11 pr-2 sm:pr-12">
-              <p className="text-xs leading-6 text-slate-500 sm:text-sm">
-                Click the GET CODE button above, copy the coupon code, continue
-                to{" "}
-                <strong className="font-bold text-slate-800">
-                  {storeName}
-                </strong>
-                , and enter the code during checkout.
-              </p>
-            </div>
-          </details>
-
-          {/* QUESTION 2 */}
-
-          <details
-            className="
-              group
-              px-5
-              sm:px-7
-              lg:px-8
-            "
-          >
-            <summary
-              className="
-                flex
-                cursor-pointer
-                list-none
-                items-center
-                justify-between
-                gap-4
-                py-5
-                outline-none
-                marker:hidden
-              "
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-slate-100
-                    text-xs
-                    font-black
-                    text-slate-600
-                  "
-                >
-                  02
-                </span>
-
-                <span className="text-sm font-black leading-5 text-slate-900 sm:text-[15px]">
-                  Is this coupon verified?
-                </span>
-              </div>
-
-              <span
-                className="
-                  flex
-                  h-8
-                  w-8
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-white
-                  text-lg
-                  font-medium
-                  leading-none
-                  text-slate-500
-                  transition-all
-                  duration-200
-                  group-open:rotate-45
-                  group-open:border-emerald-200
-                  group-open:bg-emerald-50
-                  group-open:text-emerald-600
-                "
-              >
-                +
-              </span>
-            </summary>
-
-            <div className="pb-5 pl-11 pr-2 sm:pr-12">
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-slate-100
-                  bg-slate-50
-                  px-4
-                  py-3.5
-                "
-              >
-                <div className="flex items-start gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className="
+                    className={`
                       flex
-                      h-7
-                      w-7
+                      h-8
+                      w-8
                       shrink-0
                       items-center
                       justify-center
-                      rounded-full
-                      bg-white
-                      text-xs
+                      rounded-xl
+                      text-[10px]
                       font-black
-                      text-emerald-600
-                      shadow-sm
-                    "
+                      ${item.color}
+                    `}
                   >
-                    ✓
+                    {item.number}
                   </span>
 
-                  <p className="text-xs leading-6 text-slate-500 sm:text-sm">
-                    {coupon.verified
-                      ? "Yes. This coupon is currently marked as verified by DealPilot."
-                      : "This coupon is currently listed on DealPilot but has not been marked as verified."}
-                  </p>
+                  <span
+                    className="
+                      text-sm
+                      font-black
+                      leading-5
+                      text-slate-900
+                      sm:text-[15px]
+                    "
+                  >
+                    {item.question}
+                  </span>
                 </div>
-              </div>
-            </div>
-          </details>
 
-          {/* QUESTION 3 */}
-
-          <details
-            className="
-              group
-              px-5
-              sm:px-7
-              lg:px-8
-            "
-          >
-            <summary
-              className="
-                flex
-                cursor-pointer
-                list-none
-                items-center
-                justify-between
-                gap-4
-                py-5
-                outline-none
-                marker:hidden
-              "
-            >
-              <div className="flex min-w-0 items-center gap-3">
                 <span
                   className="
                     flex
@@ -2362,233 +2184,34 @@ export default async function CouponPage({ params }: Props) {
                     shrink-0
                     items-center
                     justify-center
-                    rounded-xl
-                    bg-orange-50
-                    text-xs
-                    font-black
-                    text-orange-600
+                    rounded-full
+                    border
+                    border-slate-200
+                    bg-white
+                    text-lg
+                    font-medium
+                    leading-none
+                    text-slate-500
+                    transition-all
+                    duration-200
+                    group-open:rotate-45
+                    group-open:border-emerald-200
+                    group-open:bg-emerald-50
+                    group-open:text-emerald-600
                   "
                 >
-                  03
+                  +
                 </span>
+              </summary>
 
-                <span className="text-sm font-black leading-5 text-slate-900 sm:text-[15px]">
-                  When does this coupon expire?
-                </span>
+              <div className="pb-5 pl-11 pr-2 sm:pr-12">
+                <p className="text-xs leading-6 text-slate-500 sm:text-sm">
+                  {item.answer}
+                </p>
               </div>
-
-              <span
-                className="
-                  flex
-                  h-8
-                  w-8
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-white
-                  text-lg
-                  font-medium
-                  leading-none
-                  text-slate-500
-                  transition-all
-                  duration-200
-                  group-open:rotate-45
-                  group-open:border-emerald-200
-                  group-open:bg-emerald-50
-                  group-open:text-emerald-600
-                "
-              >
-                +
-              </span>
-            </summary>
-
-            <div className="pb-5 pl-11 pr-2 sm:pr-12">
-              <p className="text-xs leading-6 text-slate-500 sm:text-sm">
-                {coupon.expires_at
-                  ? `This coupon is currently listed with an expiration date of ${coupon.expires_at}.`
-                  : "An expiration date is not currently available for this coupon. Check the store's terms before completing your purchase."}
-              </p>
-            </div>
-          </details>
-
-          {/* QUESTION 4 */}
-
-          <details
-            className="
-              group
-              px-5
-              sm:px-7
-              lg:px-8
-            "
-          >
-            <summary
-              className="
-                flex
-                cursor-pointer
-                list-none
-                items-center
-                justify-between
-                gap-4
-                py-5
-                outline-none
-                marker:hidden
-              "
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-emerald-50
-                    text-xs
-                    font-black
-                    text-emerald-600
-                  "
-                >
-                  04
-                </span>
-
-                <span className="text-sm font-black leading-5 text-slate-900 sm:text-[15px]">
-                  Does the coupon work on every product?
-                </span>
-              </div>
-
-              <span
-                className="
-                  flex
-                  h-8
-                  w-8
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-white
-                  text-lg
-                  font-medium
-                  leading-none
-                  text-slate-500
-                  transition-all
-                  duration-200
-                  group-open:rotate-45
-                  group-open:border-emerald-200
-                  group-open:bg-emerald-50
-                  group-open:text-emerald-600
-                "
-              >
-                +
-              </span>
-            </summary>
-
-            <div className="pb-5 pl-11 pr-2 sm:pr-12">
-              <p className="text-xs leading-6 text-slate-500 sm:text-sm">
-                Not necessarily. Some coupons may only apply to selected
-                products, categories, sellers or orders. Minimum purchase
-                requirements and other exclusions may also apply.
-              </p>
-            </div>
-          </details>
-
-          {/* QUESTION 5 */}
-
-          <details
-            className="
-              group
-              px-5
-              sm:px-7
-              lg:px-8
-            "
-          >
-            <summary
-              className="
-                flex
-                cursor-pointer
-                list-none
-                items-center
-                justify-between
-                gap-4
-                py-5
-                outline-none
-                marker:hidden
-              "
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-slate-100
-                    text-xs
-                    font-black
-                    text-slate-600
-                  "
-                >
-                  05
-                </span>
-
-                <span className="text-sm font-black leading-5 text-slate-900 sm:text-[15px]">
-                  What should I do if the coupon does not work?
-                </span>
-              </div>
-
-              <span
-                className="
-                  flex
-                  h-8
-                  w-8
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-slate-200
-                  bg-white
-                  text-lg
-                  font-medium
-                  leading-none
-                  text-slate-500
-                  transition-all
-                  duration-200
-                  group-open:rotate-45
-                  group-open:border-emerald-200
-                  group-open:bg-emerald-50
-                  group-open:text-emerald-600
-                "
-              >
-                +
-              </span>
-            </summary>
-
-            <div className="pb-5 pl-11 pr-2 sm:pr-12">
-              <p className="text-xs leading-6 text-slate-500 sm:text-sm">
-                Make sure the coupon has been entered correctly and that the
-                order meets the store&apos;s conditions. Also check whether the
-                offer has expired or has product restrictions. If the offer is
-                no longer available, review the latest deals from{" "}
-                <strong className="font-bold text-slate-800">
-                  {storeName}
-                </strong>
-                .
-              </p>
-            </div>
-          </details>
+            </details>
+          ))}
         </div>
-
-        {/* BOTTOM NOTE */}
 
         <div
           className="
@@ -2598,24 +2221,10 @@ export default async function CouponPage({ params }: Props) {
             px-5
             py-4
             sm:px-7
-            lg:px-8
           "
         >
           <div className="flex items-start gap-3">
-            <span
-              className="
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-white
-                text-sm
-                shadow-sm
-              "
-            >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm shadow-sm">
               💡
             </span>
 
@@ -2633,9 +2242,7 @@ export default async function CouponPage({ params }: Props) {
       ===================================================== */}
 
       {relatedCoupons.length > 0 && (
-        <section className="mt-10 sm:mt-12">
-          {/* HEADER */}
-
+        <section className="mt-9 sm:mt-11">
           <div
             className="
               mb-5
@@ -2647,20 +2254,18 @@ export default async function CouponPage({ params }: Props) {
               sm:justify-between
             "
           >
-            <div>
+            <div className="min-w-0">
               <div
                 className="
-                  mb-2
                   inline-flex
-                  items-center
                   rounded-full
                   bg-emerald-50
                   px-3
                   py-1
-                  text-[10px]
+                  text-[9px]
                   font-black
                   uppercase
-                  tracking-widest
+                  tracking-[0.16em]
                   text-emerald-600
                 "
               >
@@ -2669,6 +2274,7 @@ export default async function CouponPage({ params }: Props) {
 
               <h2
                 className="
+                  mt-2
                   text-xl
                   font-black
                   tracking-tight
@@ -2692,8 +2298,7 @@ export default async function CouponPage({ params }: Props) {
                   w-fit
                   shrink-0
                   items-center
-                  justify-center
-                  rounded-full
+                  rounded-xl
                   border
                   border-slate-200
                   bg-white
@@ -2703,12 +2308,10 @@ export default async function CouponPage({ params }: Props) {
                   font-extrabold
                   text-slate-700
                   shadow-sm
-                  transition-all
-                  duration-200
+                  transition
                   hover:border-emerald-200
                   hover:bg-emerald-50
                   hover:text-emerald-700
-                  sm:text-sm
                 "
               >
                 View all coupons
@@ -2716,8 +2319,6 @@ export default async function CouponPage({ params }: Props) {
               </Link>
             )}
           </div>
-
-          {/* COUPON GRID */}
 
           <div
             className="
@@ -2730,21 +2331,11 @@ export default async function CouponPage({ params }: Props) {
             "
           >
             {relatedCoupons.map((item) => (
-              <div
-                key={item.id}
-                className="
-                  min-w-0
-                  transition-transform
-                  duration-200
-                  hover:-translate-y-0.5
-                "
-              >
+              <div key={item.id} className="min-w-0">
                 <CouponCard coupon={item} />
               </div>
             ))}
           </div>
-
-          {/* MOBILE STORE LINK */}
 
           {storeSlug && (
             <div className="mt-5 flex justify-center sm:hidden">
@@ -2764,8 +2355,7 @@ export default async function CouponPage({ params }: Props) {
                   font-extrabold
                   text-slate-700
                   shadow-sm
-                  transition-all
-                  duration-200
+                  transition
                   hover:border-emerald-200
                   hover:bg-emerald-50
                   hover:text-emerald-700
@@ -2776,8 +2366,6 @@ export default async function CouponPage({ params }: Props) {
               </Link>
             </div>
           )}
-
-          {/* TRUST NOTE */}
 
           <div
             className="

@@ -4,9 +4,29 @@ import { supabase } from "@/lib/supabaseClient";
 export const revalidate = 0;
 
 export default async function TrendingCoupons() {
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const today = now.toISOString();
 
-  const { data: coupons, error } = await supabase
+  /* =========================================================
+     TRENDING WINDOW
+     Ưu tiên các deal mới trong 7 ngày gần nhất
+  ========================================================= */
+
+  const sevenDaysAgo = new Date(
+    now.getTime() - 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  /* =========================================================
+     GET TRENDING COUPONS
+
+     Ưu tiên:
+     1. Coupon mới trong 7 ngày
+     2. popularity_count
+     3. click_count
+     4. created_at mới nhất
+  ========================================================= */
+
+  const { data: recentCoupons, error: recentError } = await supabase
     .from("coupons")
     .select(
       `
@@ -21,22 +41,81 @@ export default async function TrendingCoupons() {
     )
     .eq("status", "Active")
     .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .gte("created_at", sevenDaysAgo)
+    .order("popularity_count", {
+      ascending: false,
+      nullsFirst: false,
+    })
     .order("click_count", {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .order("created_at", {
       ascending: false,
       nullsFirst: false,
     })
     .limit(10);
 
-  if (error) {
-    console.error("Error fetching trending coupons:", error);
+  if (recentError) {
+    console.error("Error fetching recent trending coupons:", recentError);
   }
 
-  if (!coupons || coupons.length === 0) {
+  /*
+   * Nếu chưa có đủ 10 deal trong 7 ngày gần nhất,
+   * lấy thêm các deal active còn lại để tránh section bị ít card.
+   */
+
+  let coupons = recentCoupons ?? [];
+
+  if (!recentError && coupons.length < 10) {
+    const existingIds = new Set(coupons.map((coupon) => coupon.id));
+
+    const { data: fallbackCoupons, error: fallbackError } = await supabase
+      .from("coupons")
+      .select(
+        `
+            *,
+            stores!coupons_store_id_fkey (
+              id,
+              name,
+              slug,
+              logo_url
+            )
+          `,
+      )
+      .eq("status", "Active")
+      .or(`expires_at.is.null,expires_at.gte.${today}`)
+      .order("popularity_count", {
+        ascending: false,
+        nullsFirst: false,
+      })
+      .order("click_count", {
+        ascending: false,
+        nullsFirst: false,
+      })
+      .limit(20);
+
+    if (fallbackError) {
+      console.error("Error fetching trending fallback coupons:", fallbackError);
+    } else {
+      const fallbackUnique = (fallbackCoupons ?? []).filter(
+        (coupon) => !existingIds.has(coupon.id),
+      );
+
+      coupons = [...coupons, ...fallbackUnique].slice(0, 10);
+    }
+  }
+
+  /* =========================================================
+     EMPTY STATE
+  ========================================================= */
+
+  if (coupons.length === 0) {
     return null;
   }
 
   return (
-    <section className="my-8 w-full sm:my-10">
+    <section className="w-full">
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -96,7 +175,7 @@ export default async function TrendingCoupons() {
               sm:text-sm
             "
           >
-            Coupons getting the most attention right now
+            Fresh deals getting attention right now
           </p>
         </div>
 
@@ -120,19 +199,26 @@ export default async function TrendingCoupons() {
             className="
               h-2
               w-2
+              animate-pulse
               rounded-full
               bg-emerald-500
             "
           />
 
-          <span className="text-[11px] font-bold text-slate-500">
+          <span
+            className="
+              text-[11px]
+              font-bold
+              text-slate-500
+            "
+          >
             Trending now
           </span>
         </div>
       </div>
 
       {/* =====================================================
-          HORIZONTAL COUPON SCROLLER
+          COUPON SCROLLER
       ===================================================== */}
 
       <div
@@ -166,20 +252,20 @@ export default async function TrendingCoupons() {
           <div
             key={coupon.id}
             className="
-              w-[210px]
-              min-w-[210px]
-              max-w-[210px]
+              w-[285px]
+              min-w-[285px]
+              max-w-[285px]
               shrink-0
               snap-start
               self-stretch
 
-              sm:w-[190px]
-              sm:min-w-[190px]
-              sm:max-w-[190px]
+              sm:w-[270px]
+              sm:min-w-[270px]
+              sm:max-w-[270px]
 
-              lg:w-[calc((100%_-_48px)_/_5)]
-              lg:min-w-[calc((100%_-_48px)_/_5)]
-              lg:max-w-[calc((100%_-_48px)_/_5)]
+              lg:w-[calc((100%-64px)/5)]
+              lg:min-w-[calc((100%-64px)/5)]
+              lg:max-w-[calc((100%-64px)/5)]
             "
           >
             <CouponCard coupon={coupon} />
@@ -206,6 +292,7 @@ export default async function TrendingCoupons() {
           "
         >
           <span>Swipe to explore</span>
+
           <span className="text-slate-500">→</span>
         </div>
       )}

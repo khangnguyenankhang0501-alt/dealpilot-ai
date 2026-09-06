@@ -4,7 +4,15 @@ import { supabase } from "@/lib/supabaseClient";
 export const revalidate = 0;
 
 export default async function FeaturedCoupons() {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString();
+
+  /* =========================================================
+     GET FEATURED COUPONS
+     Ưu tiên:
+     1. Exclusive deals
+     2. Verified deals
+     3. Nhiều clicks
+  ========================================================= */
 
   const { data: coupons, error } = await supabase
     .from("coupons")
@@ -21,11 +29,23 @@ export default async function FeaturedCoupons() {
     )
     .eq("status", "Active")
     .or(`expires_at.is.null,expires_at.gte.${today}`)
+    .order("is_exclusive", {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .order("verified", {
+      ascending: false,
+      nullsFirst: false,
+    })
     .order("click_count", {
       ascending: false,
       nullsFirst: false,
     })
     .limit(10);
+
+  /* =========================================================
+     ERROR HANDLING
+  ========================================================= */
 
   if (error) {
     console.error("Error fetching featured coupons:", error);
@@ -97,7 +117,7 @@ export default async function FeaturedCoupons() {
               sm:text-sm
             "
           >
-            Hand-picked coupon codes and offers worth checking today.
+            Hand-picked coupon codes and standout offers worth checking today.
           </p>
         </div>
 
@@ -126,7 +146,13 @@ export default async function FeaturedCoupons() {
             "
           />
 
-          <span className="text-[11px] font-bold text-slate-500">
+          <span
+            className="
+              text-[11px]
+              font-bold
+              text-slate-500
+            "
+          >
             Updated today
           </span>
         </div>
@@ -167,20 +193,20 @@ export default async function FeaturedCoupons() {
           <div
             key={coupon.id}
             className="
-              w-[210px]
-              min-w-[210px]
-              max-w-[210px]
+              w-[285px]
+              min-w-[285px]
+              max-w-[285px]
               shrink-0
               snap-start
               self-stretch
 
-              sm:w-[190px]
-              sm:min-w-[190px]
-              sm:max-w-[190px]
+              sm:w-[270px]
+              sm:min-w-[270px]
+              sm:max-w-[270px]
 
-              lg:w-[calc((100%_-_48px)_/_5)]
-              lg:min-w-[calc((100%_-_48px)_/_5)]
-              lg:max-w-[calc((100%_-_48px)_/_5)]
+              lg:w-[calc((100%-64px)/5)]
+              lg:min-w-[calc((100%-64px)/5)]
+              lg:max-w-[calc((100%-64px)/5)]
             "
           >
             <CouponCard coupon={coupon} />
@@ -207,6 +233,7 @@ export default async function FeaturedCoupons() {
           "
         >
           <span>Swipe to explore</span>
+
           <span className="text-slate-500">→</span>
         </div>
       )}

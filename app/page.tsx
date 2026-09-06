@@ -110,7 +110,7 @@ export default async function HomePage() {
   ========================================================= */
 
   return (
-    <main className="w-full">
+    <main className="w-full bg-slate-50/30">
       {/* =====================================================
           PAGE CONTAINER
       ===================================================== */}
@@ -119,17 +119,24 @@ export default async function HomePage() {
         className="
           mx-auto
           w-full
-          max-w-6xl
+          max-w-7xl
           px-4
           sm:px-6
           lg:px-8
+          xl:px-10
         "
       >
         {/* ===================================================
             HERO
         =================================================== */}
 
-        <section className="pt-4 sm:pt-6 lg:pt-8">
+        <section
+          className="
+            pt-3
+            sm:pt-5
+            lg:pt-7
+          "
+        >
           <Hero coupons={activeCoupons} stats={heroStats} />
         </section>
 
@@ -137,7 +144,13 @@ export default async function HomePage() {
             FEATURED
         =================================================== */}
 
-        <section className="mt-8 sm:mt-10 lg:mt-12">
+        <section
+          className="
+            mt-9
+            sm:mt-11
+            lg:mt-12
+          "
+        >
           <FeaturedCoupons />
         </section>
 
@@ -145,7 +158,13 @@ export default async function HomePage() {
             POPULAR
         =================================================== */}
 
-        <section className="mt-8 sm:mt-10 lg:mt-12">
+        <section
+          className="
+            mt-11
+            sm:mt-13
+            lg:mt-14
+          "
+        >
           <PopularCoupons />
         </section>
 
@@ -153,7 +172,13 @@ export default async function HomePage() {
             TRENDING
         =================================================== */}
 
-        <section className="mt-8 sm:mt-10 lg:mt-12">
+        <section
+          className="
+            mt-11
+            sm:mt-13
+            lg:mt-14
+          "
+        >
           <TrendingCoupons />
         </section>
 
@@ -161,7 +186,16 @@ export default async function HomePage() {
             LATEST
         =================================================== */}
 
-        <section className="mt-8 pb-8 sm:mt-10 sm:pb-12 lg:mt-12 lg:pb-16">
+        <section
+          className="
+            mt-11
+            pb-10
+            sm:mt-13
+            sm:pb-14
+            lg:mt-14
+            lg:pb-18
+          "
+        >
           <LatestCoupons />
         </section>
       </div>

@@ -7,7 +7,7 @@ export const revalidate = 0;
 export default async function LatestCoupons() {
   const today = new Date().toISOString();
 
-  const { data: coupons } = await supabase
+  const { data: coupons, error } = await supabase
     .from("coupons")
     .select(
       `
@@ -27,6 +27,10 @@ export default async function LatestCoupons() {
       nullsFirst: false,
     })
     .limit(12);
+
+  if (error) {
+    console.error("Error fetching latest coupons:", error);
+  }
 
   const hasCoupons = Boolean(coupons && coupons.length > 0);
 
@@ -93,17 +97,25 @@ export default async function LatestCoupons() {
                   sm:text-xs
                 "
               >
-                Fresh coupon codes and deals added recently.
+                Fresh coupon codes and deals added most recently.
               </p>
             </div>
           </div>
         </div>
 
         {/* =====================================================
-            DESKTOP STATUS + VIEW ALL
+            DESKTOP ACTIONS
         ===================================================== */}
 
-        <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
+        <div
+          className="
+            hidden
+            shrink-0
+            items-center
+            gap-2.5
+            sm:flex
+          "
+        >
           {hasCoupons && (
             <div
               className="
@@ -112,14 +124,20 @@ export default async function LatestCoupons() {
                 gap-2
                 rounded-full
                 border
-                border-slate-200
-                bg-white
+                border-cyan-100
+                bg-cyan-50/70
                 px-3
                 py-1.5
-                shadow-sm
               "
             >
-              <span className="relative flex h-2.5 w-2.5">
+              <span
+                className="
+                  relative
+                  flex
+                  h-2
+                  w-2
+                "
+              >
                 <span
                   className="
                     absolute
@@ -127,24 +145,30 @@ export default async function LatestCoupons() {
                     w-full
                     animate-ping
                     rounded-full
-                    bg-emerald-400
-                    opacity-60
+                    bg-cyan-400
+                    opacity-50
                   "
                 />
 
                 <span
                   className="
                     relative
-                    h-2.5
-                    w-2.5
+                    h-2
+                    w-2
                     rounded-full
-                    bg-emerald-500
+                    bg-cyan-500
                   "
                 />
               </span>
 
-              <span className="text-[11px] font-bold text-slate-500">
-                Updated today
+              <span
+                className="
+                  text-[11px]
+                  font-bold
+                  text-cyan-700
+                "
+              >
+                Latest today
               </span>
             </div>
           )}
@@ -167,12 +191,14 @@ export default async function LatestCoupons() {
               shadow-sm
               transition-all
               duration-200
+              hover:-translate-y-[1px]
               hover:border-emerald-200
               hover:bg-emerald-50
               hover:text-emerald-600
             "
           >
-            View all coupons →
+            View all coupons
+            <span className="ml-1">→</span>
           </Link>
         </div>
       </div>
@@ -185,7 +211,7 @@ export default async function LatestCoupons() {
         <div
           className="
             flex
-            min-h-[200px]
+            min-h-[220px]
             flex-col
             items-center
             justify-center
@@ -236,6 +262,28 @@ export default async function LatestCoupons() {
           >
             New deals and coupon codes will appear here as they are added.
           </p>
+
+          <Link
+            href="/deals"
+            className="
+              mt-5
+              inline-flex
+              h-9
+              items-center
+              rounded-xl
+              bg-emerald-500
+              px-4
+              text-xs
+              font-extrabold
+              text-white
+              shadow-sm
+              transition
+              hover:bg-emerald-600
+            "
+          >
+            Explore deals
+            <span className="ml-1.5">→</span>
+          </Link>
         </div>
       ) : (
         <>
@@ -253,10 +301,18 @@ export default async function LatestCoupons() {
               sm:grid-cols-2
               sm:gap-5
               lg:grid-cols-3
+              lg:gap-6
             "
           >
-            {coupons.map((coupon) => (
-              <div key={coupon.id} className="flex min-w-0 w-full max-w-full">
+            {coupons!.map((coupon) => (
+              <div
+                key={coupon.id}
+                className="
+                  flex
+                  min-w-0
+                  w-full
+                "
+              >
                 <CouponCard coupon={coupon} />
               </div>
             ))}
@@ -266,7 +322,14 @@ export default async function LatestCoupons() {
               MOBILE VIEW ALL
           ======================================================= */}
 
-          <div className="mt-5 flex justify-center sm:hidden">
+          <div
+            className="
+              mt-5
+              flex
+              justify-center
+              sm:hidden
+            "
+          >
             <Link
               href="/coupons"
               className="
@@ -290,7 +353,8 @@ export default async function LatestCoupons() {
                 hover:text-emerald-600
               "
             >
-              View all coupons →
+              View all coupons
+              <span className="ml-1.5">→</span>
             </Link>
           </div>
         </>
