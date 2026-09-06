@@ -16,11 +16,10 @@ export default function CouponDetailActions({
   const [processing, setProcessing] = useState(false);
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
 
-  const timerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const hasCode = Boolean(couponCode);
   const hasAffiliateUrl = Boolean(affiliateUrl);
-
   const label = storeName || "store";
 
   /* =======================================================
@@ -48,7 +47,7 @@ export default function CouponDetailActions({
   };
 
   /* =======================================================
-     GET DEAL WITHOUT CODE
+     DIRECT DEAL
   ======================================================= */
 
   const handleDirectDeal = () => {
@@ -60,37 +59,30 @@ export default function CouponDetailActions({
   };
 
   /* =======================================================
-     COPY CODE + REVEAL + OPEN
+     COPY + REVEAL + OPEN
   ======================================================= */
 
   const handleCopyAndOpen = async () => {
-    if (processing || !hasCode || !affiliateUrl) {
+    if (processing || !hasCode || !hasAffiliateUrl) {
       return;
     }
 
     clearTimer();
 
-    /* =====================================================
-       COPY
-    ===================================================== */
+    /* COPY */
 
     try {
       await navigator.clipboard.writeText(couponCode!);
     } catch {
-      // Clipboard unavailable.
-      // Still reveal the code and continue.
+      // Continue even if clipboard access fails.
     }
 
-    /* =====================================================
-       REVEAL CODE IMMEDIATELY
-    ===================================================== */
+    /* REVEAL */
 
     setRevealedCode(couponCode!);
     setProcessing(true);
 
-    /* =====================================================
-       WAIT EXACTLY 3 SECONDS
-    ===================================================== */
+    /* 3 SECOND DELAY */
 
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
@@ -103,10 +95,6 @@ export default function CouponDetailActions({
 
   return (
     <div className="mt-6">
-      {/* ===================================================
-          COUPON
-      =================================================== */}
-
       {hasCode ? (
         <div
           className="
@@ -156,16 +144,8 @@ export default function CouponDetailActions({
 
           {/* BODY */}
 
-          <div
-            className="
-              px-4
-              pb-4
-              pt-3
-            "
-          >
-            {/* =================================================
-                CODE DISPLAY
-            ================================================= */}
+          <div className="px-4 pb-4 pt-3">
+            {/* CODE */}
 
             <div
               className={`
@@ -221,9 +201,7 @@ export default function CouponDetailActions({
               )}
             </div>
 
-            {/* =================================================
-                STATUS
-            ================================================= */}
+            {/* COPIED */}
 
             {revealedCode && (
               <div
@@ -239,14 +217,11 @@ export default function CouponDetailActions({
                 "
               >
                 <span>✓</span>
-
                 <span>Code copied</span>
               </div>
             )}
 
-            {/* =================================================
-                CTA
-            ================================================= */}
+            {/* CTA */}
 
             <button
               type="button"
@@ -285,9 +260,7 @@ export default function CouponDetailActions({
                   : `Copy code & open ${label}`}
             </button>
 
-            {/* =================================================
-                NOTE
-            ================================================= */}
+            {/* NOTE */}
 
             <p
               className="
@@ -306,10 +279,6 @@ export default function CouponDetailActions({
           </div>
         </div>
       ) : (
-        /* ===================================================
-           NO CODE
-        =================================================== */
-
         <button
           type="button"
           onClick={handleDirectDeal}
@@ -343,10 +312,6 @@ export default function CouponDetailActions({
           <span className="text-sm">→</span>
         </button>
       )}
-
-      {/* =====================================================
-          NO AFFILIATE URL
-      ===================================================== */}
 
       {!hasCode && !hasAffiliateUrl && (
         <div

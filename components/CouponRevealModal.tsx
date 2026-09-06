@@ -34,7 +34,7 @@ export default function CouponRevealModal({
   const [processing, setProcessing] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   /* =======================================================
      MOUNT
@@ -49,7 +49,7 @@ export default function CouponRevealModal({
   }, []);
 
   /* =======================================================
-     CLEANUP TIMER
+     GLOBAL TIMER CLEANUP
   ======================================================= */
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function CouponRevealModal({
   }, []);
 
   /* =======================================================
-     RESET WHEN MODAL CLOSES
+     RESET WHEN CLOSED
   ======================================================= */
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function CouponRevealModal({
   }, [open]);
 
   /* =======================================================
-     RESET STORE LOGO ERROR
+     RESET LOGO ERROR
   ======================================================= */
 
   useEffect(() => {
@@ -103,10 +103,12 @@ export default function CouponRevealModal({
     document.addEventListener("keydown", handleEscape);
 
     const originalOverflow = document.body.style.overflow;
+
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+
       document.body.style.overflow = originalOverflow;
     };
   }, [open, onClose, processing]);
@@ -118,10 +120,7 @@ export default function CouponRevealModal({
   const handleCopyAndOpen = async () => {
     if (processing) return;
 
-    /* =====================================================
-       NO CODE
-       Mở deal trực tiếp
-    ===================================================== */
+    /* NO CODE */
 
     if (!code) {
       if (affiliateUrl) {
@@ -132,34 +131,27 @@ export default function CouponRevealModal({
       return;
     }
 
-    /* =====================================================
-       COPY CODE
-    ===================================================== */
+    /* COPY */
 
     try {
       await navigator.clipboard.writeText(code);
     } catch {
-      // Clipboard unavailable -> vẫn tiếp tục flow.
+      // Continue even if clipboard is unavailable.
     }
 
-    /* =====================================================
-       CANCEL OLD TIMER
-    ===================================================== */
+    /* CLEAR OLD TIMER */
 
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
+
       timerRef.current = null;
     }
 
-    /* =====================================================
-       START PROCESSING
-    ===================================================== */
+    /* START PROCESSING */
 
     setProcessing(true);
 
-    /* =====================================================
-       EXACT 3 SECOND DELAY
-    ===================================================== */
+    /* EXACTLY 3 SECONDS */
 
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
@@ -174,7 +166,7 @@ export default function CouponRevealModal({
   };
 
   /* =======================================================
-     RENDER GUARD
+     RENDER
   ======================================================= */
 
   if (!open || !mounted) {
@@ -220,9 +212,7 @@ export default function CouponRevealModal({
           sm:rounded-[30px]
         "
       >
-        {/* =================================================
-            CLOSE
-        ================================================= */}
+        {/* CLOSE */}
 
         <button
           type="button"
@@ -270,7 +260,7 @@ export default function CouponRevealModal({
           "
         >
           {/* =================================================
-              LEFT — PRODUCT IMAGE
+              PRODUCT IMAGE
           ================================================= */}
 
           <div
@@ -398,7 +388,7 @@ export default function CouponRevealModal({
           </div>
 
           {/* =================================================
-              RIGHT — DEAL INFORMATION
+              DEAL INFORMATION
           ================================================= */}
 
           <div
@@ -411,7 +401,7 @@ export default function CouponRevealModal({
               md:p-9
             "
           >
-            {/* STORE BRAND */}
+            {/* STORE */}
 
             <div
               className="
@@ -567,9 +557,7 @@ export default function CouponRevealModal({
               </div>
             )}
 
-            {/* =================================================
-                HIDDEN CODE
-            ================================================= */}
+            {/* HIDDEN CODE */}
 
             <div className="mt-6 sm:mt-7">
               <div
@@ -606,9 +594,7 @@ export default function CouponRevealModal({
               </div>
             </div>
 
-            {/* =================================================
-                CTA
-            ================================================= */}
+            {/* CTA */}
 
             <button
               type="button"
@@ -671,7 +657,7 @@ export default function CouponRevealModal({
                 : "You'll be redirected to the store to claim this deal."}
             </p>
 
-            {/* TRUST ROW */}
+            {/* TRUST */}
 
             <div
               className="
@@ -698,9 +684,7 @@ export default function CouponRevealModal({
           </div>
         </div>
 
-        {/* =================================================
-            FOOTER
-        ================================================= */}
+        {/* FOOTER */}
 
         <div
           className="
