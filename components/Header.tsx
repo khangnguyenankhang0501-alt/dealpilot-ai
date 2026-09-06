@@ -28,10 +28,6 @@ function isNavigationActive(pathname: string, href: string) {
     return pathname === "/coupons" || pathname.startsWith("/coupons/");
   }
 
-  if (href === "/deals") {
-    return pathname === "/deals" || pathname.startsWith("/deals/");
-  }
-
   if (href === "/categories") {
     return pathname === "/categories" || pathname.startsWith("/categories/");
   }
@@ -128,7 +124,7 @@ export default function Header() {
             className="
               grid
               min-h-[76px]
-              grid-cols-[190px_minmax(280px,1fr)_auto]
+              grid-cols-[190px_minmax(280px,1fr)_310px]
               items-center
               gap-6
               xl:gap-8
@@ -328,7 +324,15 @@ export default function Header() {
                 justify-self-end
               "
             >
-              <div className="flex items-center gap-1">
+              <div
+                className="
+                  grid
+                  w-[220px]
+                  grid-cols-2
+                  items-center
+                  gap-1
+                "
+              >
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);
 
@@ -338,9 +342,13 @@ export default function Header() {
                       href={item.href}
                       className={`
                         relative
+                        flex
+                        min-h-[44px]
+                        items-center
+                        justify-center
                         whitespace-nowrap
                         rounded-xl
-                        px-3.5
+                        px-3
                         py-2.5
                         text-sm
                         font-bold
@@ -376,8 +384,19 @@ export default function Header() {
 
               {/* SAVED */}
 
-              <div className="ml-3 border-l border-slate-200 pl-3">
-                <div className="rounded-xl transition-colors hover:bg-slate-50">
+              <div className="ml-2 border-l border-slate-200 pl-2">
+                <div
+                  className="
+                    flex
+                    min-h-[44px]
+                    min-w-[82px]
+                    items-center
+                    justify-center
+                    rounded-xl
+                    transition-colors
+                    hover:bg-slate-50
+                  "
+                >
                   <SavedLink />
                 </div>
               </div>
@@ -642,6 +661,10 @@ export default function Header() {
                       href={item.href}
                       onClick={closeMobileMenu}
                       className={`
+                        flex
+                        min-h-[46px]
+                        items-center
+                        justify-center
                         rounded-xl
                         border
                         px-4
@@ -665,6 +688,10 @@ export default function Header() {
                   href="/saved"
                   onClick={closeMobileMenu}
                   className={`
+                    flex
+                    min-h-[46px]
+                    items-center
+                    justify-center
                     rounded-xl
                     border
                     px-4
