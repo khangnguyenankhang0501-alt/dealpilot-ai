@@ -18,10 +18,6 @@ const mainNavigation = [
     href: "/coupons",
   },
   {
-    label: "Deals",
-    href: "/deals",
-  },
-  {
     label: "Categories",
     href: "/categories",
   },
