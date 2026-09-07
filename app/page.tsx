@@ -85,13 +85,13 @@ export default async function HomePage() {
      VERIFIED COUPONS
   ========================================================= */
 
-  const verifiedCoupons = activeCoupons.filter(
-    (coupon) => coupon.verified === true,
-  ).length;
-
   const verifiedPercentage =
     activeCoupons.length > 0
-      ? Math.round((verifiedCoupons / activeCoupons.length) * 100)
+      ? Math.round(
+          (activeCoupons.filter((coupon) => coupon.verified === true).length /
+            activeCoupons.length) *
+            100,
+        )
       : 0;
 
   /* =========================================================
