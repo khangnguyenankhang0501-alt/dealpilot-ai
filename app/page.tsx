@@ -141,7 +141,7 @@ export default async function HomePage() {
         </section>
 
         {/* ===================================================
-            FEATURED
+            TRENDING
         =================================================== */}
 
         <section
@@ -151,7 +151,7 @@ export default async function HomePage() {
             lg:mt-12
           "
         >
-          <FeaturedCoupons />
+          <TrendingCoupons />
         </section>
 
         {/* ===================================================
@@ -169,7 +169,7 @@ export default async function HomePage() {
         </section>
 
         {/* ===================================================
-            TRENDING
+            FEATURED
         =================================================== */}
 
         <section
@@ -179,7 +179,7 @@ export default async function HomePage() {
             lg:mt-14
           "
         >
-          <TrendingCoupons />
+          <FeaturedCoupons />
         </section>
 
         {/* ===================================================
