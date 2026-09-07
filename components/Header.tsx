@@ -17,19 +17,11 @@ const mainNavigation = [
     label: "Coupons",
     href: "/coupons",
   },
-  {
-    label: "Categories",
-    href: "/categories",
-  },
 ];
 
 function isNavigationActive(pathname: string, href: string) {
   if (href === "/coupons") {
     return pathname === "/coupons" || pathname.startsWith("/coupons/");
-  }
-
-  if (href === "/categories") {
-    return pathname === "/categories" || pathname.startsWith("/categories/");
   }
 
   return pathname === href;
@@ -124,7 +116,7 @@ export default function Header() {
             className="
               grid
               min-h-[76px]
-              grid-cols-[190px_minmax(280px,1fr)_310px]
+              grid-cols-[190px_minmax(280px,1fr)_220px]
               items-center
               gap-6
               xl:gap-8
@@ -329,10 +321,11 @@ export default function Header() {
                   grid
                   w-[220px]
                   grid-cols-2
-                  items-center
-                  gap-1
+                  gap-2
                 "
               >
+                {/* COUPONS */}
+
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);
 
@@ -346,7 +339,6 @@ export default function Header() {
                         min-h-[44px]
                         items-center
                         justify-center
-                        whitespace-nowrap
                         rounded-xl
                         px-3
                         py-2.5
@@ -380,16 +372,14 @@ export default function Header() {
                     </Link>
                   );
                 })}
-              </div>
 
-              {/* SAVED */}
+                {/* SAVED */}
 
-              <div className="ml-2 border-l border-slate-200 pl-2">
                 <div
                   className="
                     flex
                     min-h-[44px]
-                    min-w-[82px]
+                    min-w-0
                     items-center
                     justify-center
                     rounded-xl
@@ -652,6 +642,8 @@ export default function Header() {
           >
             <nav className="px-4 py-4">
               <div className="grid grid-cols-2 gap-2">
+                {/* COUPONS */}
+
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);
 
@@ -683,6 +675,8 @@ export default function Header() {
                     </Link>
                   );
                 })}
+
+                {/* SAVED */}
 
                 <Link
                   href="/saved"
