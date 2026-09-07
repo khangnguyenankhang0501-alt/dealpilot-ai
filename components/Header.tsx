@@ -215,7 +215,9 @@ export default function Header() {
                   onChange={(event) => setQuery(event.target.value)}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => {
-                    setTimeout(() => setSearchFocused(false), 150);
+                    setTimeout(() => {
+                      setSearchFocused(false);
+                    }, 150);
                   }}
                   placeholder="Search coupons, stores..."
                   className="
@@ -306,7 +308,7 @@ export default function Header() {
             </div>
 
             {/* ===================================================
-                NAVIGATION
+                MAIN NAVIGATION
             =================================================== */}
 
             <nav
@@ -379,7 +381,6 @@ export default function Header() {
                   className="
                     flex
                     min-h-[44px]
-                    min-w-0
                     items-center
                     justify-center
                     rounded-xl
@@ -537,7 +538,9 @@ export default function Header() {
               onChange={(event) => setQuery(event.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => {
-                setTimeout(() => setSearchFocused(false), 150);
+                setTimeout(() => {
+                  setSearchFocused(false);
+                }, 150);
               }}
               placeholder="Search coupons, stores..."
               className="
