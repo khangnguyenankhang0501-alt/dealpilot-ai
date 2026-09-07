@@ -26,17 +26,7 @@ export default async function HomePage() {
 
   const { data: coupons, error } = await supabase
     .from("coupons")
-    .select(
-      `
-        *,
-        stores!coupons_store_id_fkey (
-          id,
-          name,
-          slug,
-          logo_url
-        )
-      `,
-    )
+    .select("*")
     .eq("status", "Active")
     .or(`expires_at.is.null,expires_at.gte.${today}`)
     .order("created_at", {
@@ -85,13 +75,13 @@ export default async function HomePage() {
      VERIFIED COUPONS
   ========================================================= */
 
+  const verifiedCoupons = activeCoupons.filter(
+    (coupon) => coupon.verified === true,
+  ).length;
+
   const verifiedPercentage =
     activeCoupons.length > 0
-      ? Math.round(
-          (activeCoupons.filter((coupon) => coupon.verified === true).length /
-            activeCoupons.length) *
-            100,
-        )
+      ? Math.round((verifiedCoupons / activeCoupons.length) * 100)
       : 0;
 
   /* =========================================================
