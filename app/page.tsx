@@ -1,4 +1,3 @@
-import PopularCoupons from "@/components/PopularCoupons";
 import TrendingCoupons from "@/components/TrendingCoupons";
 import LatestCoupons from "@/components/LatestCoupons";
 import { supabase } from "@/lib/supabaseClient";
@@ -152,20 +151,6 @@ export default async function HomePage() {
           "
         >
           <TrendingCoupons />
-        </section>
-
-        {/* ===================================================
-            POPULAR
-        =================================================== */}
-
-        <section
-          className="
-            mt-11
-            sm:mt-13
-            lg:mt-14
-          "
-        >
-          <PopularCoupons />
         </section>
 
         {/* ===================================================
