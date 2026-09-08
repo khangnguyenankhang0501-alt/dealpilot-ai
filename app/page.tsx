@@ -46,6 +46,73 @@ export default async function HomePage() {
   const activeCoupons = coupons ?? [];
 
   /* =========================================================
+     GET STORES
+  ========================================================= */
+
+  const { data: storeRows, error: storesError } = await supabase
+    .from("stores")
+    .select("id, name, slug, logo_url");
+
+  if (storesError) {
+    console.error("Error fetching stores:", storesError);
+  }
+
+  /* =========================================================
+     MAP STORE NAME -> STORE DATA
+  ========================================================= */
+
+  const storesByName = new Map<
+    string,
+    {
+      id: string;
+      name: string | null;
+      slug: string | null;
+      logo_url: string | null;
+    }
+  >();
+
+  (storeRows ?? []).forEach((store) => {
+    const key = String(store.name ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (!key) {
+      return;
+    }
+
+    storesByName.set(key, {
+      id: String(store.id),
+      name: store.name ?? null,
+      slug: store.slug ?? null,
+      logo_url: store.logo_url ?? null,
+    });
+  });
+
+  /* =========================================================
+     ADD STORE DATA TO HERO COUPONS
+  ========================================================= */
+
+  const heroCoupons = activeCoupons.map((coupon) => {
+    const storeName = String(coupon.store_name ?? "")
+      .trim()
+      .toLowerCase();
+
+    const store = storesByName.get(storeName);
+
+    return {
+      ...coupon,
+      stores: store
+        ? {
+            id: store.id,
+            name: store.name,
+            slug: store.slug,
+            logo_url: store.logo_url,
+          }
+        : null,
+    };
+  });
+
+  /* =========================================================
      HERO STATS
   ========================================================= */
 
@@ -126,7 +193,7 @@ export default async function HomePage() {
             lg:pt-7
           "
         >
-          <Hero coupons={activeCoupons} stats={heroStats} />
+          <Hero coupons={heroCoupons} stats={heroStats} />
         </section>
 
         {/* ===================================================
