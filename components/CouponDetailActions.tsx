@@ -17,7 +17,6 @@ export default function CouponDetailActions({
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);
-  const affiliateWindowRef = useRef<Window | null>(null);
 
   const hasCode = Boolean(couponCode);
   const hasAffiliateUrl = Boolean(affiliateUrl);
@@ -33,8 +32,6 @@ export default function CouponDetailActions({
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-
-      affiliateWindowRef.current = null;
     };
   }, []);
 
@@ -72,17 +69,6 @@ export default function CouponDetailActions({
 
     clearTimer();
 
-    /*
-     * IMPORTANT:
-     * Mở tab NGAY TRONG CLICK của người dùng.
-     * Không chờ clipboard hoặc setTimeout trước.
-     *
-     * Trên mobile, cách này giúp tránh popup blocker.
-     */
-    const affiliateWindow = window.open("about:blank", "_blank");
-
-    affiliateWindowRef.current = affiliateWindow;
-
     /* COPY */
 
     try {
@@ -101,33 +87,9 @@ export default function CouponDetailActions({
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
 
-      const targetWindow = affiliateWindowRef.current;
-
-      /*
-       * Nếu tab mới đã được mở thành công:
-       * chuyển tab đó sang affiliate URL.
-       */
-      if (targetWindow && !targetWindow.closed) {
-        try {
-          targetWindow.location.href = affiliateUrl!;
-        } catch {
-          /*
-           * Fallback nếu browser không cho
-           * đổi location của tab đã mở.
-           */
-          window.location.href = affiliateUrl!;
-        }
-      } else {
-        /*
-         * Popup bị browser chặn:
-         * mở affiliate trên chính tab hiện tại
-         * để người dùng vẫn đi được đến Amazon.
-         */
-        window.location.href = affiliateUrl!;
-      }
+      window.open(affiliateUrl!, "_blank", "noopener,noreferrer");
 
       setProcessing(false);
-      affiliateWindowRef.current = null;
     }, 3000);
   };
 
