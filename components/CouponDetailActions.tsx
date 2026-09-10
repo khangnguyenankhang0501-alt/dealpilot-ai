@@ -552,16 +552,91 @@ export default function CouponDetailActions({
 
     clearTimer();
 
-    /*
-     * Create desktop tab BEFORE async
-     * clipboard operation.
-     */
-    if (!isMobileDevice() && hasAffiliateUrl) {
-      prepareDesktopTab();
-    }
-
     setProcessing(true);
     setCopyError(false);
+
+    /*
+     * ======================================================
+     * MOBILE
+     * ======================================================
+     *
+     * IMPORTANT:
+     *
+     * Do NOT wait for clipboard.
+     * Do NOT use setTimeout before launching the app.
+     *
+     * Start clipboard copy and launch the Amazon app
+     * during the SAME user click.
+     *
+     * This preserves the browser's transient user activation.
+     */
+    if (isMobileDevice()) {
+      /*
+       * Start copying immediately.
+       *
+       * The promise continues in the background.
+       */
+      const copyPromise = copyToClipboard(revealedCode);
+
+      /*
+       * Mark the coupon as copied.
+       *
+       * If Amazon opens immediately, the browser will leave
+       * this page before the popup can visibly render.
+       * That is intentional and is necessary for reliable
+       * app launching.
+       */
+      setCopied(true);
+
+      /*
+       * IMPORTANT:
+       *
+       * Launch Amazon NOW, inside the original user click.
+       *
+       * Do NOT put this inside:
+       * setTimeout()
+       *
+       * Do NOT await copyPromise first.
+       */
+      navigateToStore();
+
+      /*
+       * Check clipboard result in the background.
+       *
+       * If Amazon successfully opens, the page becomes hidden
+       * and this result is no longer important.
+       *
+       * If Amazon does NOT open and the user remains on the page,
+       * we can still show the copy error.
+       */
+      void copyPromise.then((success) => {
+        if (success || document.visibilityState !== "visible") {
+          return;
+        }
+
+        setCopied(false);
+        setProcessing(false);
+        setCopyError(true);
+      });
+
+      return;
+    }
+
+    /*
+     * ======================================================
+     * DESKTOP
+     * ======================================================
+     *
+     * Desktop keeps the existing flow:
+     *
+     * 1. Open a new tab immediately.
+     * 2. Copy coupon code.
+     * 3. Show Code copied popup.
+     * 4. Navigate the already-opened tab.
+     */
+    if (hasAffiliateUrl) {
+      prepareDesktopTab();
+    }
 
     const success = await copyToClipboard(revealedCode);
 
@@ -571,14 +646,9 @@ export default function CouponDetailActions({
       setCopyError(true);
 
       /*
-       * Close empty desktop tab when
-       * clipboard copying failed.
+       * Close temporary desktop tab if copy failed.
        */
-      if (
-        !isMobileDevice() &&
-        externalWindowRef.current &&
-        !externalWindowRef.current.closed
-      ) {
+      if (externalWindowRef.current && !externalWindowRef.current.closed) {
         try {
           externalWindowRef.current.close();
         } catch {
@@ -592,12 +662,13 @@ export default function CouponDetailActions({
     }
 
     /*
-     * Show popup.
+     * Show desktop popup.
      */
     setCopied(true);
 
     /*
-     * Wait before opening affiliate link.
+     * Desktop can wait because the new tab was already
+     * created directly during the user click.
      */
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
