@@ -47,7 +47,7 @@ export default function CouponDetailActions({
         return true;
       }
     } catch {
-      // Continue to fallback.
+      // Continue with fallback.
     }
 
     try {
@@ -82,10 +82,7 @@ export default function CouponDetailActions({
 
   /*
    * STEP 1
-   * Click "Copy code & open Amazon"
-   *
-   * Only reveal the code.
-   * Do NOT open Amazon yet.
+   * Reveal coupon code.
    */
   const handleRevealCode = () => {
     if (processing || !couponCode) {
@@ -101,12 +98,8 @@ export default function CouponDetailActions({
 
   /*
    * STEP 2
-   * Click the coupon code.
-   *
-   * Copy code
-   * -> Show "Code copied"
-   * -> Wait 1.3 seconds
-   * -> Open affiliate URL
+   * Click coupon code:
+   * copy -> show popup -> redirect.
    */
   const handleCopyCodeAndNavigate = async () => {
     if (processing || !revealedCode) {
@@ -134,15 +127,29 @@ export default function CouponDetailActions({
         timerRef.current = null;
 
         window.location.assign(affiliateUrl!);
-      }, 1300);
+      }, 1800);
     } else {
       setProcessing(false);
     }
   };
 
   /*
-   * No coupon code.
-   * Open the store directly.
+   * Manual fallback button.
+   * Used when automatic redirect does not happen.
+   */
+  const handleContinueToStore = () => {
+    if (!hasAffiliateUrl) {
+      return;
+    }
+
+    clearTimer();
+
+    window.location.assign(affiliateUrl!);
+  };
+
+  /*
+   * No coupon code:
+   * direct store navigation.
    */
   const handleDirectDeal = () => {
     if (processing || !hasAffiliateUrl) {
@@ -152,11 +159,6 @@ export default function CouponDetailActions({
     window.location.assign(affiliateUrl!);
   };
 
-  /*
-   * Styles
-   * Use normal strings instead of template literals.
-   * This avoids the Turbopack parsing problem.
-   */
   const revealButtonClass =
     "flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-xs font-black uppercase tracking-wide text-white shadow-[0_8px_20px_rgba(16,185,129,0.18)] transition-all duration-200 hover:bg-emerald-600 hover:shadow-[0_10px_24px_rgba(16,185,129,0.22)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
 
@@ -294,49 +296,86 @@ export default function CouponDetailActions({
       {/* ====================================================== */}
 
       {copied ? (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-[3px]">
-          <div className="w-full max-w-[360px] rounded-3xl border border-white/70 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.25)]">
-            {/* Success icon */}
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.25)]">
-                ✓
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="mt-5 text-xl font-black tracking-tight text-slate-900">
-              Code copied
-            </h3>
-
-            {/* Message */}
-            <p className="mx-auto mt-2 max-w-[270px] text-sm leading-6 text-slate-500">
-              Your coupon code has been copied to your clipboard.
-            </p>
-
-            {/* Coupon code */}
-            <div className="mt-5 rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 px-4 py-3">
-              <div className="break-all text-base font-black tracking-[0.1em] text-emerald-700">
-                {revealedCode}
-              </div>
-            </div>
-
-            {/* Opening store */}
-            {hasAffiliateUrl ? (
-              <>
-                <div className="mt-5 flex items-center justify-center gap-2 text-xs font-bold text-slate-600">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                  <span>Opening {label}...</span>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.3)]">
+            {/* Top success area */}
+            <div className="px-6 pb-5 pt-7 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.25)]">
+                  ✓
                 </div>
+              </div>
 
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full w-full animate-pulse rounded-full bg-emerald-500" />
-                </div>
-              </>
-            ) : (
-              <p className="mt-4 text-xs font-semibold text-slate-400">
-                Deal link is currently unavailable.
+              <h3 className="mt-5 text-[22px] font-black tracking-tight text-slate-900">
+                Code copied
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-[290px] text-sm leading-6 text-slate-500">
+                Your coupon code has been copied to your clipboard.
               </p>
-            )}
+            </div>
+
+            {/* Code */}
+            <div className="px-6">
+              <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
+                <p className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-600">
+                  Your coupon code
+                </p>
+
+                <div className="break-all text-lg font-black tracking-[0.12em] text-emerald-700">
+                  {revealedCode}
+                </div>
+              </div>
+            </div>
+
+            {/* Store status */}
+            <div className="px-6 pb-6 pt-5">
+              {hasAffiliateUrl ? (
+                <>
+                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-600">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+
+                    <span>Opening {label}...</span>
+                  </div>
+
+                  <p className="mt-2 text-center text-[10px] font-medium text-slate-400">
+                    You will be redirected automatically.
+                  </p>
+
+                  {/* Manual fallback */}
+                  <button
+                    type="button"
+                    onClick={handleContinueToStore}
+                    className="
+                      mt-5 flex h-12 w-full items-center justify-center gap-2
+                      rounded-xl bg-emerald-500 px-4
+                      text-xs font-black uppercase tracking-wide text-white
+                      shadow-[0_8px_20px_rgba(16,185,129,0.18)]
+                      transition-all duration-200
+                      hover:bg-emerald-600
+                      hover:shadow-[0_10px_24px_rgba(16,185,129,0.22)]
+                      active:scale-[0.99]
+                    "
+                  >
+                    <span>Continue to {label}</span>
+                    <span className="text-sm">→</span>
+                  </button>
+                </>
+              ) : (
+                <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-center">
+                  <p className="text-xs font-bold text-amber-700">
+                    Deal link is currently unavailable.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom note */}
+            <div className="border-t border-slate-100 bg-slate-50 px-6 py-3">
+              <p className="text-center text-[9px] font-medium leading-4 text-slate-400">
+                Your coupon code is ready to use at the store.
+              </p>
+            </div>
           </div>
         </div>
       ) : null}
