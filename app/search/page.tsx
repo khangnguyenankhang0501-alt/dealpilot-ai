@@ -44,8 +44,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </h1>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-              Search for coupons, products, or stores using the search bar
-              above.
+              Search for coupons, products, coupon codes, or stores using the
+              search bar above.
             </p>
 
             <Link
@@ -81,20 +81,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const now = new Date().toISOString();
 
   /*
-   * Search coupon data.
-   *
-   * Matches the search term anywhere inside:
+   * Search in:
    *
    * - title
    * - store_name
    * - slug
+   * - coupon_code
+   *
+   * ilike makes the search case-insensitive.
    */
   const { data: couponRows, error } = await supabase
     .from("coupons")
     .select("*")
     .eq("status", "Active")
     .or(
-      `title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%,slug.ilike.%${safeQuery}%`,
+      `title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%,slug.ilike.%${safeQuery}%,coupon_code.ilike.%${safeQuery}%`,
     )
     .or(`expires_at.is.null,expires_at.gte.${now}`)
     .order("created_at", {
@@ -103,8 +104,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     .limit(100);
 
   /*
-   * Load stores separately so CouponCard can
-   * continue showing store logos correctly.
+   * Load stores separately so CouponCard
+   * can continue displaying store logos.
    */
   const { data: storeRows } = await supabase
     .from("stores")
@@ -121,7 +122,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   /*
-   * Attach matching store information to each coupon.
+   * Attach matching store information
+   * to each coupon.
    */
   const coupons = (couponRows || []).map((coupon: any) => {
     const storeKey =
