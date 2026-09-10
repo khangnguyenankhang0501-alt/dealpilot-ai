@@ -560,61 +560,45 @@ export default function CouponDetailActions({
      * MOBILE
      * ======================================================
      *
-     * IMPORTANT:
+     * Show the "Code copied" popup first.
+     * Then wait 700ms before trying to open the Amazon app.
      *
-     * Do NOT wait for clipboard.
-     * Do NOT use setTimeout before launching the app.
-     *
-     * Start clipboard copy and launch the Amazon app
-     * during the SAME user click.
-     *
-     * This preserves the browser's transient user activation.
+     * 700ms is a compromise:
+     * - long enough to see the confirmation
+     * - short enough to keep the transition quick
      */
     if (isMobileDevice()) {
-      /*
-       * Start copying immediately.
-       *
-       * The promise continues in the background.
-       */
       const copyPromise = copyToClipboard(revealedCode);
 
       /*
-       * Mark the coupon as copied.
-       *
-       * If Amazon opens immediately, the browser will leave
-       * this page before the popup can visibly render.
-       * That is intentional and is necessary for reliable
-       * app launching.
+       * Show popup immediately.
        */
       setCopied(true);
 
       /*
-       * IMPORTANT:
+       * Give the user a brief moment to see:
        *
-       * Launch Amazon NOW, inside the original user click.
-       *
-       * Do NOT put this inside:
-       * setTimeout()
-       *
-       * Do NOT await copyPromise first.
+       * ✓ Code copied
+       * Opening Amazon app...
        */
-      navigateToStore();
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+
+        navigateToStore();
+      }, 700);
 
       /*
-       * Check clipboard result in the background.
-       *
-       * If Amazon successfully opens, the page becomes hidden
-       * and this result is no longer important.
-       *
-       * If Amazon does NOT open and the user remains on the page,
-       * we can still show the copy error.
+       * Check clipboard in the background.
        */
       void copyPromise.then((success) => {
         if (success || document.visibilityState !== "visible") {
           return;
         }
 
-        setCopied(false);
+        /*
+         * Do not close the popup immediately if the user
+         * is still seeing the transition.
+         */
         setProcessing(false);
         setCopyError(true);
       });
