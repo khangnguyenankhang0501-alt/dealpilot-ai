@@ -19,6 +19,7 @@ export default function CouponDetailActions({
   const [copyError, setCopyError] = useState(false);
 
   const timerRef = useRef<number | null>(null);
+  const fallbackTimerRef = useRef<number | null>(null);
 
   const hasCode = Boolean(couponCode);
   const hasAffiliateUrl = Boolean(affiliateUrl);
@@ -30,6 +31,11 @@ export default function CouponDetailActions({
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+
+      if (fallbackTimerRef.current !== null) {
+        window.clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -37,6 +43,11 @@ export default function CouponDetailActions({
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+
+    if (fallbackTimerRef.current !== null) {
+      window.clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
     }
   };
 
@@ -81,8 +92,215 @@ export default function CouponDetailActions({
   };
 
   /*
+   * Detect Amazon URL.
+   *
+   * We only attempt Amazon app deep-linking when the
+   * affiliate URL itself points to an Amazon domain.
+   *
+   * Example:
+   * https://www.amazon.com/dp/ABC123?tag=xxxxx
+   *
+   * Tracking URLs from other affiliate networks are
+   * left untouched.
+   */
+  const isAmazonUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      const hostname = parsed.hostname.toLowerCase();
+
+      if (hostname === "amazon.com" || hostname.endsWith(".amazon.com")) {
+        return true;
+      }
+
+      const amazonCountryDomains = [
+        "amazon.ca",
+        "amazon.co.uk",
+        "amazon.de",
+        "amazon.fr",
+        "amazon.it",
+        "amazon.es",
+        "amazon.nl",
+        "amazon.se",
+        "amazon.pl",
+        "amazon.co.jp",
+        "amazon.com.au",
+        "amazon.in",
+        "amazon.sg",
+        "amazon.ae",
+        "amazon.sa",
+        "amazon.com.mx",
+        "amazon.com.br",
+      ];
+
+      return amazonCountryDomains.some((domain) => {
+        return hostname === domain || hostname.endsWith(`.${domain}`);
+      });
+    } catch {
+      return false;
+    }
+  };
+
+  const isAndroid = () => {
+    return /Android/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => {
+    return (
+      /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  };
+
+  /*
+   * Build Amazon Android Intent URL.
+   *
+   * Amazon Shopping package:
+   * com.amazon.mShop.android.shopping
+   *
+   * The original affiliate URL is preserved as the
+   * browser fallback.
+   */
+  const buildAmazonAndroidIntent = (url: string) => {
+    const parsed = new URL(url);
+
+    const amazonTarget = `${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`;
+
+    const encodedFallback = encodeURIComponent(url);
+
+    return (
+      `intent://${amazonTarget}` +
+      `#Intent;` +
+      `scheme=https;` +
+      `package=com.amazon.mShop.android.shopping;` +
+      `S.browser_fallback_url=${encodedFallback};` +
+      `end`
+    );
+  };
+
+  /*
+   * Build Amazon iOS deep-link URL.
+   *
+   * Example:
+   * https://www.amazon.com/dp/ABC123
+   *
+   * becomes:
+   * com.amazon.mobile.shopping://www.amazon.com/dp/ABC123
+   */
+  const buildAmazonIOSDeepLink = (url: string) => {
+    const parsed = new URL(url);
+
+    return (
+      `com.amazon.mobile.shopping://` +
+      `${parsed.hostname}` +
+      `${parsed.pathname}` +
+      `${parsed.search}` +
+      `${parsed.hash}`
+    );
+  };
+
+  /*
+   * Navigate to store.
+   *
+   * Priority:
+   *
+   * Android:
+   * Amazon Shopping App
+   * -> browser fallback
+   *
+   * iOS:
+   * Amazon Shopping App
+   * -> affiliate URL fallback
+   *
+   * Desktop/other:
+   * normal affiliate URL
+   */
+  const navigateToStore = () => {
+    if (!hasAffiliateUrl) {
+      return;
+    }
+
+    const originalUrl = affiliateUrl!;
+
+    clearTimer();
+
+    if (!isAmazonUrl(originalUrl)) {
+      window.location.assign(originalUrl);
+      return;
+    }
+
+    /*
+     * ANDROID
+     */
+    if (isAndroid()) {
+      try {
+        const intentUrl = buildAmazonAndroidIntent(originalUrl);
+
+        window.location.assign(intentUrl);
+        return;
+      } catch {
+        window.location.assign(originalUrl);
+        return;
+      }
+    }
+
+    /*
+     * IOS / IPADOS
+     */
+    if (isIOS()) {
+      try {
+        const amazonAppUrl = buildAmazonIOSDeepLink(originalUrl);
+
+        let pageLeft = false;
+
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === "hidden") {
+            pageLeft = true;
+          }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange, {
+          once: false,
+        });
+
+        /*
+         * Try Amazon app.
+         */
+        window.location.assign(amazonAppUrl);
+
+        /*
+         * If Amazon app did not open, fall back
+         * to the original affiliate URL.
+         */
+        fallbackTimerRef.current = window.setTimeout(() => {
+          fallbackTimerRef.current = null;
+
+          document.removeEventListener(
+            "visibilitychange",
+            handleVisibilityChange,
+          );
+
+          if (!pageLeft && document.visibilityState === "visible") {
+            window.location.assign(originalUrl);
+          }
+        }, 1800);
+
+        return;
+      } catch {
+        window.location.assign(originalUrl);
+        return;
+      }
+    }
+
+    /*
+     * DESKTOP / OTHER DEVICES
+     */
+    window.location.assign(originalUrl);
+  };
+
+  /*
    * STEP 1
-   * Reveal coupon code.
+   *
+   * Reveal code only.
    */
   const handleRevealCode = () => {
     if (processing || !couponCode) {
@@ -98,8 +316,11 @@ export default function CouponDetailActions({
 
   /*
    * STEP 2
-   * Click coupon code:
-   * copy -> show popup -> redirect.
+   *
+   * Click coupon code
+   * -> copy
+   * -> show Code copied popup
+   * -> open Amazon app
    */
   const handleCopyCodeAndNavigate = async () => {
     if (processing || !revealedCode) {
@@ -120,31 +341,31 @@ export default function CouponDetailActions({
       return;
     }
 
+    /*
+     * Show popup.
+     */
     setCopied(true);
 
-    if (hasAffiliateUrl) {
-      timerRef.current = window.setTimeout(() => {
-        timerRef.current = null;
+    /*
+     * Wait a little so user sees:
+     *
+     * ✓ Code copied
+     * Opening Amazon app...
+     */
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
 
-        window.location.assign(affiliateUrl!);
-      }, 1800);
-    } else {
-      setProcessing(false);
-    }
+      navigateToStore();
+    }, 1800);
   };
 
   /*
-   * Manual fallback button.
-   * Used when automatic redirect does not happen.
+   * Manual button inside popup.
    */
   const handleContinueToStore = () => {
-    if (!hasAffiliateUrl) {
-      return;
-    }
-
     clearTimer();
 
-    window.location.assign(affiliateUrl!);
+    navigateToStore();
   };
 
   /*
@@ -156,7 +377,7 @@ export default function CouponDetailActions({
       return;
     }
 
-    window.location.assign(affiliateUrl!);
+    navigateToStore();
   };
 
   const revealButtonClass =
@@ -216,7 +437,7 @@ export default function CouponDetailActions({
                 </>
               ) : (
                 <>
-                  {/* STEP 2 - CLICK THE CODE */}
+                  {/* STEP 2 */}
                   <button
                     type="button"
                     onClick={handleCopyCodeAndNavigate}
@@ -298,7 +519,7 @@ export default function CouponDetailActions({
       {copied ? (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
           <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.3)]">
-            {/* Top success area */}
+            {/* Success */}
             <div className="px-6 pb-5 pt-7 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.25)]">
@@ -315,7 +536,7 @@ export default function CouponDetailActions({
               </p>
             </div>
 
-            {/* Code */}
+            {/* Coupon code */}
             <div className="px-6">
               <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
                 <p className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-600">
@@ -328,18 +549,18 @@ export default function CouponDetailActions({
               </div>
             </div>
 
-            {/* Store status */}
+            {/* Opening Amazon */}
             <div className="px-6 pb-6 pt-5">
               {hasAffiliateUrl ? (
                 <>
                   <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-600">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
 
-                    <span>Opening {label}...</span>
+                    <span>Opening {label} app...</span>
                   </div>
 
                   <p className="mt-2 text-center text-[10px] font-medium text-slate-400">
-                    You will be redirected automatically.
+                    Opening the Amazon Shopping app when available.
                   </p>
 
                   {/* Manual fallback */}
@@ -357,7 +578,7 @@ export default function CouponDetailActions({
                       active:scale-[0.99]
                     "
                   >
-                    <span>Continue to {label}</span>
+                    <span>Open {label} app</span>
                     <span className="text-sm">→</span>
                   </button>
                 </>
