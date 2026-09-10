@@ -21,9 +21,32 @@ export default function CouponDetailActions({
   const timerRef = useRef<number | null>(null);
   const fallbackTimerRef = useRef<number | null>(null);
 
+  /*
+   * Desktop external tab.
+   *
+   * We create the new tab immediately when the user clicks
+   * the coupon code. This avoids popup blockers.
+   */
+  const externalWindowRef = useRef<Window | null>(null);
+
   const hasCode = Boolean(couponCode);
   const hasAffiliateUrl = Boolean(affiliateUrl);
   const label = storeName || "store";
+
+  const isAndroid = () => {
+    return /Android/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => {
+    return (
+      /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  };
+
+  const isMobileDevice = () => {
+    return isAndroid() || isIOS();
+  };
 
   useEffect(() => {
     return () => {
@@ -91,6 +114,9 @@ export default function CouponDetailActions({
     }
   };
 
+  /*
+   * Detect Amazon URL.
+   */
   const isAmazonUrl = (url: string) => {
     try {
       const parsed = new URL(url);
@@ -128,17 +154,9 @@ export default function CouponDetailActions({
     }
   };
 
-  const isAndroid = () => {
-    return /Android/i.test(navigator.userAgent);
-  };
-
-  const isIOS = () => {
-    return (
-      /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-    );
-  };
-
+  /*
+   * Android Amazon Intent.
+   */
   const buildAmazonAndroidIntent = (url: string) => {
     const parsed = new URL(url);
 
@@ -156,6 +174,9 @@ export default function CouponDetailActions({
     );
   };
 
+  /*
+   * iOS Amazon deep link.
+   */
   const buildAmazonIOSDeepLink = (url: string) => {
     const parsed = new URL(url);
 
@@ -168,6 +189,108 @@ export default function CouponDetailActions({
     );
   };
 
+  /*
+   * Open a new desktop tab immediately.
+   *
+   * IMPORTANT:
+   * This function is called directly from the user's click
+   * before any async operation. That prevents most popup blockers.
+   */
+  const prepareDesktopTab = () => {
+    if (isMobileDevice() || !hasAffiliateUrl) {
+      return;
+    }
+
+    try {
+      const newTab = window.open("", "_blank");
+
+      if (!newTab) {
+        externalWindowRef.current = null;
+        return;
+      }
+
+      externalWindowRef.current = newTab;
+
+      /*
+       * Remove opener access for security.
+       */
+      try {
+        newTab.opener = null;
+      } catch {
+        // Ignore browser restrictions.
+      }
+
+      /*
+       * Show a simple temporary loading screen
+       * inside the new tab.
+       */
+      try {
+        newTab.document.title = `Opening ${label}...`;
+
+        newTab.document.body.innerHTML = `
+          <div style="
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#f8fafc;
+            font-family:Arial,Helvetica,sans-serif;
+            color:#0f172a;
+          ">
+            <div style="
+              text-align:center;
+              padding:32px;
+            ">
+              <div style="
+                width:48px;
+                height:48px;
+                margin:0 auto 18px;
+                border-radius:9999px;
+                background:#d1fae5;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                color:#059669;
+                font-size:24px;
+                font-weight:700;
+              ">
+                ✓
+              </div>
+
+              <div style="
+                font-size:20px;
+                font-weight:700;
+                margin-bottom:8px;
+              ">
+                Opening ${label}...
+              </div>
+
+              <div style="
+                font-size:14px;
+                color:#64748b;
+              ">
+                Please wait while we open the store.
+              </div>
+            </div>
+          </div>
+        `;
+      } catch {
+        // Ignore document write failures.
+      }
+    } catch {
+      externalWindowRef.current = null;
+    }
+  };
+
+  /*
+   * Navigate to affiliate URL.
+   *
+   * MOBILE:
+   * Amazon app deep-link.
+   *
+   * DESKTOP:
+   * Use the already-opened external tab.
+   */
   const navigateToStore = () => {
     if (!hasAffiliateUrl) {
       return;
@@ -177,15 +300,43 @@ export default function CouponDetailActions({
 
     clearTimer();
 
+    /*
+     * Non-Amazon affiliate URL.
+     */
     if (!isAmazonUrl(originalUrl)) {
+      if (!isMobileDevice()) {
+        const existingTab = externalWindowRef.current;
+
+        if (existingTab && !existingTab.closed) {
+          try {
+            existingTab.location.href = originalUrl;
+            return;
+          } catch {
+            // Continue to fallback.
+          }
+        }
+
+        const newTab = window.open(
+          originalUrl,
+          "_blank",
+          "noopener,noreferrer",
+        );
+
+        if (!newTab) {
+          return;
+        }
+
+        return;
+      }
+
       window.location.assign(originalUrl);
       return;
     }
 
     /*
-     * Android:
-     * Try Amazon Shopping app first.
-     * Original affiliate URL remains browser fallback.
+     * ======================================================
+     * ANDROID
+     * ======================================================
      */
     if (isAndroid()) {
       try {
@@ -200,9 +351,9 @@ export default function CouponDetailActions({
     }
 
     /*
-     * iPhone / iPad:
-     * Try Amazon Shopping app first.
-     * Fall back to original affiliate URL.
+     * ======================================================
+     * IOS / IPADOS
+     * ======================================================
      */
     if (isIOS()) {
       try {
@@ -241,14 +392,44 @@ export default function CouponDetailActions({
     }
 
     /*
-     * Desktop / other devices:
-     * Use original affiliate URL.
+     * ======================================================
+     * DESKTOP
+     * ======================================================
+     *
+     * Do NOT replace the current DealPilot page.
+     *
+     * Instead send the user to the new tab that was created
+     * during the coupon-code click.
      */
-    window.location.assign(originalUrl);
+    const existingTab = externalWindowRef.current;
+
+    if (existingTab && !existingTab.closed) {
+      try {
+        existingTab.location.href = originalUrl;
+        return;
+      } catch {
+        // Continue with fallback.
+      }
+    }
+
+    /*
+     * Fallback in case the first new tab was blocked
+     * or closed.
+     */
+    const newTab = window.open(originalUrl, "_blank", "noopener,noreferrer");
+
+    if (!newTab) {
+      /*
+       * Keep DealPilot open if browser blocks the new tab.
+       * The "Continue to store" button can be used manually.
+       */
+      return;
+    }
   };
 
   /*
    * STEP 1
+   *
    * Reveal coupon code.
    */
   const handleRevealCode = () => {
@@ -265,7 +446,17 @@ export default function CouponDetailActions({
 
   /*
    * STEP 2
-   * Copy code -> show popup -> open store.
+   *
+   * User clicks coupon code.
+   *
+   * DESKTOP:
+   * create new tab immediately
+   *
+   * MOBILE:
+   * no new tab
+   *
+   * Then:
+   * copy -> popup -> navigate
    */
   const handleCopyCodeAndNavigate = async () => {
     if (processing || !revealedCode) {
@@ -273,6 +464,16 @@ export default function CouponDetailActions({
     }
 
     clearTimer();
+
+    /*
+     * IMPORTANT:
+     *
+     * This must happen before the async clipboard operation.
+     * Otherwise desktop browsers can block window.open().
+     */
+    if (!isMobileDevice() && hasAffiliateUrl) {
+      prepareDesktopTab();
+    }
 
     setProcessing(true);
     setCopyError(false);
@@ -283,13 +484,38 @@ export default function CouponDetailActions({
       setProcessing(false);
       setCopied(false);
       setCopyError(true);
+
+      /*
+       * Close the temporary desktop tab if copying failed.
+       */
+      if (
+        !isMobileDevice() &&
+        externalWindowRef.current &&
+        !externalWindowRef.current.closed
+      ) {
+        try {
+          externalWindowRef.current.close();
+        } catch {
+          // Ignore close errors.
+        }
+
+        externalWindowRef.current = null;
+      }
+
       return;
     }
 
+    /*
+     * Show popup.
+     */
     setCopied(true);
 
     /*
-     * Give the user enough time to see the compact popup.
+     * Give the user time to see:
+     *
+     * ✓ Code copied
+     *
+     * and then move to the store.
      */
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
@@ -299,10 +525,11 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Manual fallback.
+   * Manual fallback button.
    */
   const handleContinueToStore = () => {
     clearTimer();
+
     navigateToStore();
   };
 
@@ -314,6 +541,28 @@ export default function CouponDetailActions({
       return;
     }
 
+    /*
+     * Desktop direct deal:
+     * open new tab.
+     */
+    if (!isMobileDevice()) {
+      const newTab = window.open(
+        affiliateUrl!,
+        "_blank",
+        "noopener,noreferrer",
+      );
+
+      if (!newTab) {
+        return;
+      }
+
+      return;
+    }
+
+    /*
+     * Mobile:
+     * use the same app/affiliate logic.
+     */
     navigateToStore();
   };
 
@@ -363,6 +612,7 @@ export default function CouponDetailActions({
                     className={revealButtonClass}
                   >
                     <span>Copy code &amp; open {label}</span>
+
                     <span className="text-sm">→</span>
                   </button>
 
@@ -431,6 +681,7 @@ export default function CouponDetailActions({
               className={directDealButtonClass}
             >
               <span>Get deal on {label}</span>
+
               <span className="text-sm">→</span>
             </button>
 
@@ -444,7 +695,7 @@ export default function CouponDetailActions({
       </div>
 
       {/* ====================================================== */}
-      {/* COMPACT KOUPON-STYLE POPUP                            */}
+      {/* CODE COPIED POPUP                                     */}
       {/* ====================================================== */}
 
       {copied ? (
@@ -486,7 +737,11 @@ export default function CouponDetailActions({
                 <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-500">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
 
-                  <span>Opening {label} app...</span>
+                  <span>
+                    {isMobileDevice()
+                      ? `Opening ${label} app...`
+                      : `Opening ${label} in a new tab...`}
+                  </span>
                 </div>
 
                 <button
@@ -501,7 +756,12 @@ export default function CouponDetailActions({
                     active:scale-[0.99]
                   "
                 >
-                  <span>Continue to {label}</span>
+                  <span>
+                    {isMobileDevice()
+                      ? `Continue to ${label}`
+                      : `Open ${label} in new tab`}
+                  </span>
+
                   <span>→</span>
                 </button>
               </div>
