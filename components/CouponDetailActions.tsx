@@ -91,18 +91,6 @@ export default function CouponDetailActions({
     }
   };
 
-  /*
-   * Detect Amazon URL.
-   *
-   * We only attempt Amazon app deep-linking when the
-   * affiliate URL itself points to an Amazon domain.
-   *
-   * Example:
-   * https://www.amazon.com/dp/ABC123?tag=xxxxx
-   *
-   * Tracking URLs from other affiliate networks are
-   * left untouched.
-   */
   const isAmazonUrl = (url: string) => {
     try {
       const parsed = new URL(url);
@@ -151,15 +139,6 @@ export default function CouponDetailActions({
     );
   };
 
-  /*
-   * Build Amazon Android Intent URL.
-   *
-   * Amazon Shopping package:
-   * com.amazon.mShop.android.shopping
-   *
-   * The original affiliate URL is preserved as the
-   * browser fallback.
-   */
   const buildAmazonAndroidIntent = (url: string) => {
     const parsed = new URL(url);
 
@@ -177,15 +156,6 @@ export default function CouponDetailActions({
     );
   };
 
-  /*
-   * Build Amazon iOS deep-link URL.
-   *
-   * Example:
-   * https://www.amazon.com/dp/ABC123
-   *
-   * becomes:
-   * com.amazon.mobile.shopping://www.amazon.com/dp/ABC123
-   */
   const buildAmazonIOSDeepLink = (url: string) => {
     const parsed = new URL(url);
 
@@ -198,22 +168,6 @@ export default function CouponDetailActions({
     );
   };
 
-  /*
-   * Navigate to store.
-   *
-   * Priority:
-   *
-   * Android:
-   * Amazon Shopping App
-   * -> browser fallback
-   *
-   * iOS:
-   * Amazon Shopping App
-   * -> affiliate URL fallback
-   *
-   * Desktop/other:
-   * normal affiliate URL
-   */
   const navigateToStore = () => {
     if (!hasAffiliateUrl) {
       return;
@@ -229,7 +183,9 @@ export default function CouponDetailActions({
     }
 
     /*
-     * ANDROID
+     * Android:
+     * Try Amazon Shopping app first.
+     * Original affiliate URL remains browser fallback.
      */
     if (isAndroid()) {
       try {
@@ -244,7 +200,9 @@ export default function CouponDetailActions({
     }
 
     /*
-     * IOS / IPADOS
+     * iPhone / iPad:
+     * Try Amazon Shopping app first.
+     * Fall back to original affiliate URL.
      */
     if (isIOS()) {
       try {
@@ -258,19 +216,10 @@ export default function CouponDetailActions({
           }
         };
 
-        document.addEventListener("visibilitychange", handleVisibilityChange, {
-          once: false,
-        });
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
-        /*
-         * Try Amazon app.
-         */
         window.location.assign(amazonAppUrl);
 
-        /*
-         * If Amazon app did not open, fall back
-         * to the original affiliate URL.
-         */
         fallbackTimerRef.current = window.setTimeout(() => {
           fallbackTimerRef.current = null;
 
@@ -292,15 +241,15 @@ export default function CouponDetailActions({
     }
 
     /*
-     * DESKTOP / OTHER DEVICES
+     * Desktop / other devices:
+     * Use original affiliate URL.
      */
     window.location.assign(originalUrl);
   };
 
   /*
    * STEP 1
-   *
-   * Reveal code only.
+   * Reveal coupon code.
    */
   const handleRevealCode = () => {
     if (processing || !couponCode) {
@@ -316,11 +265,7 @@ export default function CouponDetailActions({
 
   /*
    * STEP 2
-   *
-   * Click coupon code
-   * -> copy
-   * -> show Code copied popup
-   * -> open Amazon app
+   * Copy code -> show popup -> open store.
    */
   const handleCopyCodeAndNavigate = async () => {
     if (processing || !revealedCode) {
@@ -341,36 +286,28 @@ export default function CouponDetailActions({
       return;
     }
 
-    /*
-     * Show popup.
-     */
     setCopied(true);
 
     /*
-     * Wait a little so user sees:
-     *
-     * ✓ Code copied
-     * Opening Amazon app...
+     * Give the user enough time to see the compact popup.
      */
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
 
       navigateToStore();
-    }, 1800);
+    }, 1500);
   };
 
   /*
-   * Manual button inside popup.
+   * Manual fallback.
    */
   const handleContinueToStore = () => {
     clearTimer();
-
     navigateToStore();
   };
 
   /*
-   * No coupon code:
-   * direct store navigation.
+   * No coupon code.
    */
   const handleDirectDeal = () => {
     if (processing || !hasAffiliateUrl) {
@@ -406,7 +343,6 @@ export default function CouponDetailActions({
       <div className="mt-6">
         {hasCode ? (
           <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50">
-            {/* Header */}
             <div className="flex items-center justify-between gap-3 border-b border-emerald-100 px-4 py-3">
               <span className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
                 Coupon code
@@ -420,7 +356,6 @@ export default function CouponDetailActions({
             <div className="px-4 pb-4 pt-3">
               {!revealedCode ? (
                 <>
-                  {/* STEP 1 */}
                   <button
                     type="button"
                     onClick={handleRevealCode}
@@ -437,7 +372,6 @@ export default function CouponDetailActions({
                 </>
               ) : (
                 <>
-                  {/* STEP 2 */}
                   <button
                     type="button"
                     onClick={handleCopyCodeAndNavigate}
@@ -465,7 +399,6 @@ export default function CouponDetailActions({
                     </p>
                   ) : null}
 
-                  {/* Copy error */}
                   {copyError ? (
                     <div className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-center">
                       <p className="text-xs font-bold text-rose-600">
@@ -478,7 +411,6 @@ export default function CouponDetailActions({
                     </div>
                   ) : null}
 
-                  {/* Missing affiliate URL */}
                   {!hasAffiliateUrl && !copied && !copyError ? (
                     <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-center">
                       <p className="text-xs font-bold text-amber-700">
@@ -492,7 +424,6 @@ export default function CouponDetailActions({
           </div>
         ) : (
           <>
-            {/* NO COUPON CODE */}
             <button
               type="button"
               onClick={handleDirectDeal}
@@ -513,90 +444,76 @@ export default function CouponDetailActions({
       </div>
 
       {/* ====================================================== */}
-      {/* CODE COPIED POPUP                                     */}
+      {/* COMPACT KOUPON-STYLE POPUP                            */}
       {/* ====================================================== */}
 
       {copied ? (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.3)]">
-            {/* Success */}
-            <div className="px-6 pb-5 pt-7 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-2xl font-black text-white shadow-[0_8px_20px_rgba(16,185,129,0.25)]">
-                  ✓
-                </div>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+            {/* Header */}
+            <div className="flex items-start gap-3 px-5 pb-3 pt-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                <span className="text-lg font-black text-emerald-600">✓</span>
               </div>
 
-              <h3 className="mt-5 text-[22px] font-black tracking-tight text-slate-900">
-                Code copied
-              </h3>
+              <div className="min-w-0">
+                <h3 className="text-base font-black tracking-tight text-slate-900">
+                  Code copied
+                </h3>
 
-              <p className="mx-auto mt-2 max-w-[290px] text-sm leading-6 text-slate-500">
-                Your coupon code has been copied to your clipboard.
-              </p>
+                <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                  Your coupon is ready to use.
+                </p>
+              </div>
             </div>
 
-            {/* Coupon code */}
-            <div className="px-6">
-              <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                <p className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-600">
-                  Your coupon code
+            {/* Code */}
+            <div className="px-5">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center">
+                <p className="mb-1 text-[8px] font-black uppercase tracking-[0.14em] text-emerald-600">
+                  Coupon code
                 </p>
 
-                <div className="break-all text-lg font-black tracking-[0.12em] text-emerald-700">
+                <div className="break-all text-base font-black tracking-[0.1em] text-emerald-700">
                   {revealedCode}
                 </div>
               </div>
             </div>
 
-            {/* Opening Amazon */}
-            <div className="px-6 pb-6 pt-5">
-              {hasAffiliateUrl ? (
-                <>
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-600">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            {/* Redirect state */}
+            {hasAffiliateUrl ? (
+              <div className="px-5 pb-5 pt-4">
+                <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-slate-500">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
 
-                    <span>Opening {label} app...</span>
-                  </div>
+                  <span>Opening {label} app...</span>
+                </div>
 
-                  <p className="mt-2 text-center text-[10px] font-medium text-slate-400">
-                    Opening the Amazon Shopping app when available.
-                  </p>
-
-                  {/* Manual fallback */}
-                  <button
-                    type="button"
-                    onClick={handleContinueToStore}
-                    className="
-                      mt-5 flex h-12 w-full items-center justify-center gap-2
-                      rounded-xl bg-emerald-500 px-4
-                      text-xs font-black uppercase tracking-wide text-white
-                      shadow-[0_8px_20px_rgba(16,185,129,0.18)]
-                      transition-all duration-200
-                      hover:bg-emerald-600
-                      hover:shadow-[0_10px_24px_rgba(16,185,129,0.22)]
-                      active:scale-[0.99]
-                    "
-                  >
-                    <span>Open {label} app</span>
-                    <span className="text-sm">→</span>
-                  </button>
-                </>
-              ) : (
-                <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-center">
-                  <p className="text-xs font-bold text-amber-700">
+                <button
+                  type="button"
+                  onClick={handleContinueToStore}
+                  className="
+                    mt-3 flex h-10 w-full items-center justify-center
+                    gap-2 rounded-xl bg-emerald-500 px-4
+                    text-[11px] font-black uppercase tracking-wide text-white
+                    transition-all duration-200
+                    hover:bg-emerald-600
+                    active:scale-[0.99]
+                  "
+                >
+                  <span>Continue to {label}</span>
+                  <span>→</span>
+                </button>
+              </div>
+            ) : (
+              <div className="px-5 pb-5 pt-4">
+                <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-center">
+                  <p className="text-[11px] font-bold text-amber-700">
                     Deal link is currently unavailable.
                   </p>
                 </div>
-              )}
-            </div>
-
-            {/* Bottom note */}
-            <div className="border-t border-slate-100 bg-slate-50 px-6 py-3">
-              <p className="text-center text-[9px] font-medium leading-4 text-slate-400">
-                Your coupon code is ready to use at the store.
-              </p>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       ) : null}
