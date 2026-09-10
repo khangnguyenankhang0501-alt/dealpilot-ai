@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import SavedLink from "@/components/SavedLink";
 
@@ -29,6 +29,7 @@ function isNavigationActive(pathname: string, href: string) {
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -82,6 +83,19 @@ export default function Header() {
   const clearSearch = () => {
     setQuery("");
     setResults([]);
+  };
+
+  const handleSearchEnter = () => {
+    const searchTerm = query.trim();
+
+    if (!searchTerm) {
+      return;
+    }
+
+    setSearchFocused(false);
+    setMobileMenuOpen(false);
+
+    router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
   };
 
   return (
@@ -213,6 +227,12 @@ export default function Header() {
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleSearchEnter();
+                    }
+                  }}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => {
                     setTimeout(() => {
@@ -536,6 +556,12 @@ export default function Header() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleSearchEnter();
+                }
+              }}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => {
                 setTimeout(() => {
