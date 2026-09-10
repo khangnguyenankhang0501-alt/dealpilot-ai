@@ -25,9 +25,17 @@ export default function CouponDetailActions({
    * Desktop external tab.
    *
    * We create the new tab immediately when the user clicks
-   * the coupon code. This avoids popup blockers.
+   * the coupon code. This helps avoid popup blockers.
    */
   const externalWindowRef = useRef<Window | null>(null);
+
+  /*
+   * Used to know that the store has already been opened.
+   *
+   * When the user returns to DealPilot, the popup will
+   * automatically close.
+   */
+  const storeNavigationStartedRef = useRef(false);
 
   const hasCode = Boolean(couponCode);
   const hasAffiliateUrl = Boolean(affiliateUrl);
@@ -48,6 +56,11 @@ export default function CouponDetailActions({
     return isAndroid() || isIOS();
   };
 
+  /*
+   * ---------------------------------------------------------
+   * CLEANUP
+   * ---------------------------------------------------------
+   */
   useEffect(() => {
     return () => {
       if (timerRef.current !== null) {
@@ -59,6 +72,56 @@ export default function CouponDetailActions({
         window.clearTimeout(fallbackTimerRef.current);
         fallbackTimerRef.current = null;
       }
+    };
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * AUTO CLOSE POPUP WHEN RETURNING TO DEALPILOT
+   * ---------------------------------------------------------
+   *
+   * Desktop:
+   * User goes to Amazon tab
+   * -> buys/browses
+   * -> returns to DealPilot
+   * -> popup closes automatically
+   *
+   * Mobile:
+   * User goes to Amazon Shopping app
+   * -> returns to browser
+   * -> popup closes automatically
+   */
+  useEffect(() => {
+    const handleReturnToDealPilot = () => {
+      if (
+        document.visibilityState === "visible" &&
+        storeNavigationStartedRef.current
+      ) {
+        setCopied(false);
+        setProcessing(false);
+        setCopyError(false);
+
+        /*
+         * Reset the flag after closing the popup.
+         * The next coupon click will set it again.
+         */
+        storeNavigationStartedRef.current = false;
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleReturnToDealPilot);
+
+    /*
+     * Focus is also handled because some desktop browsers
+     * do not always emit visibilitychange consistently
+     * when switching between tabs/windows.
+     */
+    window.addEventListener("focus", handleReturnToDealPilot);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleReturnToDealPilot);
+
+      window.removeEventListener("focus", handleReturnToDealPilot);
     };
   }, []);
 
@@ -74,6 +137,11 @@ export default function CouponDetailActions({
     }
   };
 
+  /*
+   * ---------------------------------------------------------
+   * COPY TO CLIPBOARD
+   * ---------------------------------------------------------
+   */
   const copyToClipboard = async (text: string) => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -115,7 +183,9 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Detect Amazon URL.
+   * ---------------------------------------------------------
+   * AMAZON URL DETECTION
+   * ---------------------------------------------------------
    */
   const isAmazonUrl = (url: string) => {
     try {
@@ -155,7 +225,9 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Android Amazon Intent.
+   * ---------------------------------------------------------
+   * ANDROID AMAZON INTENT
+   * ---------------------------------------------------------
    */
   const buildAmazonAndroidIntent = (url: string) => {
     const parsed = new URL(url);
@@ -175,7 +247,9 @@ export default function CouponDetailActions({
   };
 
   /*
-   * iOS Amazon deep link.
+   * ---------------------------------------------------------
+   * IOS AMAZON DEEP LINK
+   * ---------------------------------------------------------
    */
   const buildAmazonIOSDeepLink = (url: string) => {
     const parsed = new URL(url);
@@ -190,11 +264,9 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Open a new desktop tab immediately.
-   *
-   * IMPORTANT:
-   * This function is called directly from the user's click
-   * before any async operation. That prevents most popup blockers.
+   * ---------------------------------------------------------
+   * PREPARE DESKTOP TAB
+   * ---------------------------------------------------------
    */
   const prepareDesktopTab = () => {
     if (isMobileDevice() || !hasAffiliateUrl) {
@@ -202,6 +274,10 @@ export default function CouponDetailActions({
     }
 
     try {
+      /*
+       * IMPORTANT:
+       * Create the tab immediately during the user click.
+       */
       const newTab = window.open("", "_blank");
 
       if (!newTab) {
@@ -211,9 +287,6 @@ export default function CouponDetailActions({
 
       externalWindowRef.current = newTab;
 
-      /*
-       * Remove opener access for security.
-       */
       try {
         newTab.opener = null;
       } catch {
@@ -221,8 +294,7 @@ export default function CouponDetailActions({
       }
 
       /*
-       * Show a simple temporary loading screen
-       * inside the new tab.
+       * Temporary loading page.
        */
       try {
         newTab.document.title = `Opening ${label}...`;
@@ -283,13 +355,15 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Navigate to affiliate URL.
+   * ---------------------------------------------------------
+   * NAVIGATE TO STORE
+   * ---------------------------------------------------------
    *
    * MOBILE:
-   * Amazon app deep-link.
+   * Amazon Shopping app first.
    *
    * DESKTOP:
-   * Use the already-opened external tab.
+   * Already-created new tab.
    */
   const navigateToStore = () => {
     if (!hasAffiliateUrl) {
@@ -297,6 +371,15 @@ export default function CouponDetailActions({
     }
 
     const originalUrl = affiliateUrl!;
+
+    /*
+     * IMPORTANT:
+     * Tell the popup that store navigation has started.
+     *
+     * When the user eventually returns to DealPilot,
+     * the visibility handler closes the popup.
+     */
+    storeNavigationStartedRef.current = true;
 
     clearTimer();
 
@@ -310,6 +393,7 @@ export default function CouponDetailActions({
         if (existingTab && !existingTab.closed) {
           try {
             existingTab.location.href = originalUrl;
+
             return;
           } catch {
             // Continue to fallback.
@@ -330,6 +414,7 @@ export default function CouponDetailActions({
       }
 
       window.location.assign(originalUrl);
+
       return;
     }
 
@@ -343,9 +428,11 @@ export default function CouponDetailActions({
         const intentUrl = buildAmazonAndroidIntent(originalUrl);
 
         window.location.assign(intentUrl);
+
         return;
       } catch {
         window.location.assign(originalUrl);
+
         return;
       }
     }
@@ -371,6 +458,10 @@ export default function CouponDetailActions({
 
         window.location.assign(amazonAppUrl);
 
+        /*
+         * Fallback to original affiliate URL
+         * if Amazon app does not open.
+         */
         fallbackTimerRef.current = window.setTimeout(() => {
           fallbackTimerRef.current = null;
 
@@ -387,6 +478,7 @@ export default function CouponDetailActions({
         return;
       } catch {
         window.location.assign(originalUrl);
+
         return;
       }
     }
@@ -395,42 +487,36 @@ export default function CouponDetailActions({
      * ======================================================
      * DESKTOP
      * ======================================================
-     *
-     * Do NOT replace the current DealPilot page.
-     *
-     * Instead send the user to the new tab that was created
-     * during the coupon-code click.
      */
     const existingTab = externalWindowRef.current;
 
     if (existingTab && !existingTab.closed) {
       try {
         existingTab.location.href = originalUrl;
+
         return;
       } catch {
-        // Continue with fallback.
+        // Continue to fallback.
       }
     }
 
     /*
-     * Fallback in case the first new tab was blocked
-     * or closed.
+     * If the first tab was blocked/closed,
+     * try creating another tab.
      */
     const newTab = window.open(originalUrl, "_blank", "noopener,noreferrer");
 
     if (!newTab) {
-      /*
-       * Keep DealPilot open if browser blocks the new tab.
-       * The "Continue to store" button can be used manually.
-       */
       return;
     }
   };
 
   /*
+   * ---------------------------------------------------------
    * STEP 1
+   * ---------------------------------------------------------
    *
-   * Reveal coupon code.
+   * Reveal coupon code only.
    */
   const handleRevealCode = () => {
     if (processing || !couponCode) {
@@ -439,24 +525,25 @@ export default function CouponDetailActions({
 
     clearTimer();
 
+    storeNavigationStartedRef.current = false;
+
     setCopyError(false);
     setCopied(false);
     setRevealedCode(couponCode);
   };
 
   /*
+   * ---------------------------------------------------------
    * STEP 2
+   * ---------------------------------------------------------
    *
-   * User clicks coupon code.
+   * Click coupon code:
    *
-   * DESKTOP:
-   * create new tab immediately
+   * Desktop:
+   * new tab -> copy -> popup -> affiliate
    *
-   * MOBILE:
-   * no new tab
-   *
-   * Then:
-   * copy -> popup -> navigate
+   * Mobile:
+   * copy -> popup -> Amazon app
    */
   const handleCopyCodeAndNavigate = async () => {
     if (processing || !revealedCode) {
@@ -466,10 +553,8 @@ export default function CouponDetailActions({
     clearTimer();
 
     /*
-     * IMPORTANT:
-     *
-     * This must happen before the async clipboard operation.
-     * Otherwise desktop browsers can block window.open().
+     * Create desktop tab BEFORE async
+     * clipboard operation.
      */
     if (!isMobileDevice() && hasAffiliateUrl) {
       prepareDesktopTab();
@@ -486,7 +571,8 @@ export default function CouponDetailActions({
       setCopyError(true);
 
       /*
-       * Close the temporary desktop tab if copying failed.
+       * Close empty desktop tab when
+       * clipboard copying failed.
        */
       if (
         !isMobileDevice() &&
@@ -511,11 +597,7 @@ export default function CouponDetailActions({
     setCopied(true);
 
     /*
-     * Give the user time to see:
-     *
-     * ✓ Code copied
-     *
-     * and then move to the store.
+     * Wait before opening affiliate link.
      */
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
@@ -525,7 +607,34 @@ export default function CouponDetailActions({
   };
 
   /*
-   * Manual fallback button.
+   * ---------------------------------------------------------
+   * CLOSE POPUP
+   * ---------------------------------------------------------
+   *
+   * IMPORTANT:
+   * Do NOT clear the navigation timer here.
+   *
+   * If the user closes the popup before the 1.5 second
+   * redirect finishes, the affiliate tab will still open.
+   *
+   * This button only closes the visual popup.
+   */
+  const handleClosePopup = () => {
+    setCopied(false);
+    setCopyError(false);
+    setProcessing(false);
+
+    /*
+     * Do not set storeNavigationStartedRef to false here.
+     *
+     * The affiliate navigation may still happen shortly.
+     */
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * MANUAL CONTINUE TO STORE
+   * ---------------------------------------------------------
    */
   const handleContinueToStore = () => {
     clearTimer();
@@ -534,7 +643,9 @@ export default function CouponDetailActions({
   };
 
   /*
-   * No coupon code.
+   * ---------------------------------------------------------
+   * NO COUPON CODE
+   * ---------------------------------------------------------
    */
   const handleDirectDeal = () => {
     if (processing || !hasAffiliateUrl) {
@@ -542,8 +653,8 @@ export default function CouponDetailActions({
     }
 
     /*
-     * Desktop direct deal:
-     * open new tab.
+     * Desktop:
+     * open new tab directly.
      */
     if (!isMobileDevice()) {
       const newTab = window.open(
@@ -561,7 +672,7 @@ export default function CouponDetailActions({
 
     /*
      * Mobile:
-     * use the same app/affiliate logic.
+     * Amazon app / affiliate logic.
      */
     navigateToStore();
   };
@@ -700,9 +811,28 @@ export default function CouponDetailActions({
 
       {copied ? (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+          <div className="relative w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+            {/* CLOSE BUTTON */}
+            <button
+              type="button"
+              onClick={handleClosePopup}
+              aria-label="Close"
+              className="
+                absolute right-3 top-3 z-10
+                flex h-8 w-8 items-center justify-center
+                rounded-full
+                text-lg font-medium text-slate-400
+                transition-all duration-200
+                hover:bg-slate-100
+                hover:text-slate-700
+                active:scale-95
+              "
+            >
+              ×
+            </button>
+
             {/* Header */}
-            <div className="flex items-start gap-3 px-5 pb-3 pt-5">
+            <div className="flex items-start gap-3 px-5 pb-3 pt-5 pr-12">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
                 <span className="text-lg font-black text-emerald-600">✓</span>
               </div>
@@ -748,9 +878,11 @@ export default function CouponDetailActions({
                   type="button"
                   onClick={handleContinueToStore}
                   className="
-                    mt-3 flex h-10 w-full items-center justify-center
-                    gap-2 rounded-xl bg-emerald-500 px-4
-                    text-[11px] font-black uppercase tracking-wide text-white
+                    mt-3 flex h-10 w-full items-center
+                    justify-center gap-2 rounded-xl
+                    bg-emerald-500 px-4
+                    text-[11px] font-black uppercase tracking-wide
+                    text-white
                     transition-all duration-200
                     hover:bg-emerald-600
                     active:scale-[0.99]
@@ -764,6 +896,10 @@ export default function CouponDetailActions({
 
                   <span>→</span>
                 </button>
+
+                <p className="mt-2 text-center text-[9px] font-medium text-slate-400">
+                  Return to DealPilot anytime to keep browsing.
+                </p>
               </div>
             ) : (
               <div className="px-5 pb-5 pt-4">
