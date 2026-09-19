@@ -1,42 +1,71 @@
 export type CouponStore = {
-  id: number;
-  name: string;
-  slug: string;
-  logo_url: string | null;
+  id?: string | null;
+  name?: string | null;
+  slug?: string | null;
+  logo_url?: string | null;
 };
 
 export type Coupon = {
+  /**
+   * Stable coupon identifier.
+   */
   id: string;
 
-  title: string;
-  slug: string | null;
+  /** Basic coupon information */
+  title?: string | null;
+  slug?: string | null;
 
-  store_name: string | null;
+  /** Store information */
+  store_name?: string | null;
+  store_id?: string | null;
 
-  coupon_code: string | null;
-  affiliate_url: string | null;
+  /** Classification */
+  category?: string | null;
+  country?: string | null;
 
-  image_url: string | null;
+  /** Coupon / affiliate */
+  coupon_code?: string | null;
+  affiliate_url?: string | null;
 
-  discount_type: string | null;
-  discount_value: number | null;
+  /** Product / deal image */
+  image_url?: string | null;
 
-  original_price: number | null;
-  sale_price: number | null;
+  /** Discount */
+  discount_type?: string | null;
+  discount_value?: number | string | null;
 
-  verified: boolean | null;
-  is_exclusive: boolean | null;
+  /** Pricing */
+  original_price?: number | string | null;
+  sale_price?: number | string | null;
 
-  badge: string | null;
+  /** Availability */
+  status?: string | null;
+  expires_at?: string | null;
 
-  rating: number | null;
-  review_count: number | null;
-  popularity_count: number | null;
+  /** Trust / social proof */
+  verified?: boolean | null;
+  rating?: number | string | null;
+  review_count?: number | string | null;
+  popularity_count?: number | string | null;
+  click_count?: number | string | null;
 
-  shipping_text: string | null;
-  sold_text: string | null;
+  /** Presentation */
+  badge?: string | null;
+  is_exclusive?: boolean | null;
 
-  expires_at: string | null;
+  /** Additional deal metadata */
+  shipping_text?: string | null;
+  sold_text?: string | null;
 
-  stores?: CouponStore | null;
+  /** Timestamps */
+  created_at?: string | null;
+  updated_at?: string | null;
+
+  /**
+   * Supabase nested relation.
+   *
+   * Different queries in the app return this relation in slightly
+   * different shapes, so keep the relation flexible at this boundary.
+   */
+  stores?: CouponStore | CouponStore[] | null;
 };
