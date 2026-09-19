@@ -97,13 +97,17 @@ export default function CouponCard({
 
   const hasCode = Boolean(coupon.coupon_code);
 
-  const hasStore = Boolean(coupon.stores);
+  const store = Array.isArray(coupon.stores)
+    ? coupon.stores[0] || null
+    : coupon.stores || null;
 
-  const storeName = coupon.stores?.name || coupon.store_name || "Store";
+  const hasStore = Boolean(store);
 
-  const storeLogo = coupon.stores?.logo_url || "";
+  const storeName = store?.name || coupon.store_name || "Store";
 
-  const storeSlug = coupon.stores?.slug || "";
+  const storeLogo = store?.logo_url || "";
+
+  const storeSlug = store?.slug || "";
 
   const storeInitial = storeName.trim().charAt(0).toUpperCase() || "S";
 
@@ -633,20 +637,20 @@ export default function CouponCard({
           {!hasCode && !coupon.badge && (
             <span
               className="
-                  inline-flex
-                  items-center
-                  rounded-full
-                  bg-emerald-50
-                  px-2.5
-                  py-1
-                  text-[9px]
-                  font-black
-                  text-emerald-700
-                  ring-1
-                  ring-inset
-                  ring-emerald-100
-                  sm:text-[10px]
-                "
+                inline-flex
+                items-center
+                rounded-full
+                bg-emerald-50
+                px-2.5
+                py-1
+                text-[9px]
+                font-black
+                text-emerald-700
+                ring-1
+                ring-inset
+                ring-emerald-100
+                sm:text-[10px]
+              "
             >
               DEAL
             </span>
