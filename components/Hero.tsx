@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 type HeroCoupon = {
   id: string;
@@ -75,314 +76,91 @@ function formatPrice(value?: number | string | null) {
   return `$${numberValue.toFixed(2)}`;
 }
 
-function formatDiscount(value?: number | string | null) {
-  if (value == null || value === "") {
-    return "DEAL";
-  }
-
+function getDiscountNumber(value?: number | string | null) {
   const numberValue = Number(value);
 
   if (!Number.isFinite(numberValue)) {
+    return 0;
+  }
+
+  return numberValue;
+}
+
+function formatDiscount(value?: number | string | null) {
+  const numberValue = getDiscountNumber(value);
+
+  if (numberValue <= 0) {
     return "DEAL";
   }
 
   return `${numberValue}% OFF`;
 }
 
+function getStoreName(coupon: HeroCoupon) {
+  return coupon.store_name || coupon.stores?.name || "Store";
+}
+
+function getStoreLogo(coupon: HeroCoupon) {
+  return coupon.store_logo_url || coupon.stores?.logo_url || null;
+}
+
+function getCouponHref(coupon: HeroCoupon) {
+  return coupon.slug ? `/coupons/${coupon.slug}` : "/deals";
+}
+
 /* =========================================================
-   DESKTOP PRODUCT CARD
+   HERO SCORE
 ========================================================= */
 
-function DesktopProductCard({
-  product,
-  position,
-}: {
-  product: HeroCoupon;
-  position: "left" | "top" | "bottom";
-}) {
-  const discount = formatDiscount(product.discount_value);
+function getHeroScore(coupon: HeroCoupon) {
+  const discount = getDiscountNumber(coupon.discount_value);
 
-  const salePrice = formatPrice(product.sale_price) || "See deal";
+  const rating = Number(coupon.rating) || 0;
 
-  const originalPrice = formatPrice(product.original_price);
+  const reviews = Number(coupon.review_count) || 0;
 
-  const storeName = product.store_name || product.stores?.name || "Store";
+  const popularity = Number(coupon.popularity_count) || 0;
 
-  const storeLogo = product.store_logo_url || product.stores?.logo_url || null;
+  const clicks = Number(coupon.click_count) || 0;
 
-  const href = product.slug ? `/coupons/${product.slug}` : "/deals";
+  const hasImage = coupon.image_url ? 1 : 0;
 
-  const positionClass =
-    position === "left"
-      ? "left-[3%] top-[16%] rotate-[-6deg]"
-      : position === "top"
-        ? "right-[7%] top-[7%] rotate-[5deg]"
-        : "left-[29%] bottom-[5%] rotate-[-3deg]";
+  const hasPrice = coupon.sale_price != null ? 1 : 0;
+
+  const verified = coupon.verified === true ? 1 : 0;
+
+  const featured =
+    coupon.featured === true || coupon.is_featured === true ? 1 : 0;
+
+  let expirationScore = 0;
+
+  if (coupon.expires_at) {
+    const expires = new Date(coupon.expires_at).getTime();
+
+    if (Number.isFinite(expires)) {
+      const hoursLeft = (expires - Date.now()) / (1000 * 60 * 60);
+
+      if (hoursLeft > 0 && hoursLeft <= 24) {
+        expirationScore = 25;
+      } else if (hoursLeft > 24 && hoursLeft <= 72) {
+        expirationScore = 15;
+      } else if (hoursLeft > 72) {
+        expirationScore = 5;
+      }
+    }
+  }
 
   return (
-    <a
-      href={href}
-      className={`
-        group
-        absolute
-        z-20
-        block
-        w-[205px]
-        max-w-[205px]
-        overflow-hidden
-        rounded-[22px]
-        border
-        border-white/80
-        bg-white
-        p-3
-        text-slate-900
-        shadow-[0_25px_65px_rgba(0,0,0,0.35)]
-        transition-all
-        duration-300
-        ease-out
-        hover:z-50
-        hover:scale-[1.06]
-        hover:rotate-0
-        ${positionClass}
-      `}
-    >
-      {/* IMAGE */}
-
-      <div
-        className="
-          relative
-          flex
-          h-[145px]
-          w-full
-          items-center
-          justify-center
-          overflow-hidden
-          rounded-[16px]
-          bg-gradient-to-br
-          from-slate-50
-          via-white
-          to-slate-100
-        "
-      >
-        {/* PRODUCT IMAGE */}
-
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.title || "Deal"}
-            className="
-              h-full
-              w-full
-              object-contain
-              p-3
-              transition-transform
-              duration-500
-              group-hover:scale-[1.06]
-            "
-          />
-        ) : (
-          <div
-            className="
-              flex
-              h-full
-              w-full
-              items-center
-              justify-center
-              text-5xl
-            "
-          >
-            🏷️
-          </div>
-        )}
-
-        {/* DISCOUNT */}
-
-        <span
-          className="
-            absolute
-            left-2.5
-            top-2.5
-            z-10
-            rounded-full
-            bg-emerald-500
-            px-2.5
-            py-1
-            text-[10px]
-            font-black
-            tracking-wide
-            text-white
-            shadow-sm
-          "
-        >
-          {discount}
-        </span>
-
-        {/* VERIFIED */}
-
-        {product.verified === true && (
-          <span
-            title="Verified deal"
-            className="
-              absolute
-              right-2.5
-              top-2.5
-              z-10
-              flex
-              h-6
-              w-6
-              items-center
-              justify-center
-              rounded-full
-              border
-              border-white
-              bg-emerald-500
-              text-[10px]
-              font-black
-              text-white
-              shadow-sm
-            "
-          >
-            ✓
-          </span>
-        )}
-
-        {/* IMAGE HOVER */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            bg-gradient-to-br
-            from-cyan-100/0
-            via-transparent
-            to-emerald-100/0
-            transition-all
-            duration-500
-            group-hover:from-cyan-100/20
-            group-hover:to-emerald-100/20
-          "
-        />
-      </div>
-
-      {/* PRICE */}
-
-      <div className="mt-3 flex min-w-0 items-end gap-2">
-        <span
-          className="
-            truncate
-            text-[19px]
-            font-black
-            leading-none
-            tracking-tight
-            text-slate-950
-          "
-        >
-          {salePrice}
-        </span>
-
-        {originalPrice && (
-          <span
-            className="
-              shrink-0
-              pb-0.5
-              text-[10px]
-              font-medium
-              text-slate-400
-              line-through
-            "
-          >
-            {originalPrice}
-          </span>
-        )}
-      </div>
-
-      {/* TITLE */}
-
-      <p
-        className="
-          mt-1.5
-          line-clamp-2
-          h-[30px]
-          overflow-hidden
-          text-[11px]
-          font-bold
-          leading-[15px]
-          text-slate-700
-        "
-      >
-        {product.title || "Special Deal"}
-      </p>
-
-      {/* STORE */}
-
-      <div className="mt-2.5 flex min-w-0 items-center gap-1.5">
-        {storeLogo ? (
-          <img
-            src={storeLogo}
-            alt={storeName}
-            className="
-              h-5
-              w-5
-              shrink-0
-              rounded-md
-              object-contain
-            "
-          />
-        ) : (
-          <div
-            className="
-              flex
-              h-5
-              w-5
-              shrink-0
-              items-center
-              justify-center
-              rounded-md
-              bg-slate-100
-              text-[8px]
-              font-black
-              text-slate-500
-            "
-          >
-            S
-          </div>
-        )}
-
-        <span
-          className="
-            min-w-0
-            truncate
-            text-[10px]
-            font-bold
-            text-slate-500
-          "
-        >
-          {storeName}
-        </span>
-
-        {product.verified === true && (
-          <span
-            className="
-              ml-auto
-              flex
-              h-4
-              w-4
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              bg-emerald-100
-              text-[9px]
-              font-black
-              text-emerald-600
-            "
-          >
-            ✓
-          </span>
-        )}
-      </div>
-    </a>
+    discount * 3 +
+    rating * 5 +
+    Math.min(reviews / 100, 20) +
+    Math.min(popularity / 100, 20) +
+    Math.min(clicks / 50, 15) +
+    verified * 20 +
+    featured * 15 +
+    hasImage * 10 +
+    hasPrice * 5 +
+    expirationScore
   );
 }
 
@@ -390,13 +168,7 @@ function DesktopProductCard({
    COUNTDOWN
 ========================================================= */
 
-function Countdown({
-  expiresAt,
-  discount,
-}: {
-  expiresAt?: string | null;
-  discount?: number | string | null;
-}) {
+function Countdown({ expiresAt }: { expiresAt?: string | null }) {
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   useEffect(() => {
@@ -425,355 +197,85 @@ function Countdown({
     };
   }, [expiresAt]);
 
+  if (!expiresAt || secondsLeft <= 0) {
+    return (
+      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+        <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+
+        <span>Deal ending soon</span>
+      </div>
+    );
+  }
+
   const hours = Math.floor(secondsLeft / 3600);
 
   const minutes = Math.floor((secondsLeft % 3600) / 60);
 
   const seconds = secondsLeft % 60;
 
-  const discountNumber = discount != null ? Number(discount) : NaN;
-
-  const discountText = Number.isFinite(discountNumber)
-    ? `${discountNumber}%`
-    : "DEAL";
-
-  const hasCountdown = Boolean(expiresAt) && secondsLeft > 0;
-
   return (
-    <div
-      className="
-        absolute
-        bottom-5
-        right-5
-        z-40
-        w-[225px]
-        max-w-[calc(100%-20px)]
-        overflow-hidden
-        rounded-[22px]
-        border
-        border-white/10
-        bg-slate-950/90
-        p-4
-        shadow-[0_25px_60px_rgba(0,0,0,0.45)]
-        backdrop-blur-xl
-      "
-    >
-      {/* GLOW */}
+    <div className="flex items-center gap-1">
+      <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">
+        Ends in
+      </span>
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-10
-          -top-10
-          h-24
-          w-24
-          rounded-full
-          bg-fuchsia-500/20
-          blur-3xl
-        "
-      />
+      <span className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-black tabular-nums text-white">
+        {String(hours).padStart(2, "0")}
+      </span>
 
-      {/* HEADER */}
+      <span className="text-[9px] font-black text-slate-300">:</span>
 
-      <div className="relative flex items-center justify-between">
-        <div
-          className="
-            flex
-            items-center
-            gap-2
-            text-xs
-            font-extrabold
-            tracking-wide
-            text-white
-          "
-        >
-          <span>🔥</span>
-          ENDING SOON
-        </div>
+      <span className="rounded-md bg-slate-900 px-1.5 py-1 text-[9px] font-black tabular-nums text-white">
+        {String(minutes).padStart(2, "0")}
+      </span>
 
-        <span className="relative flex h-2.5 w-2.5">
-          <span
-            className="
-              absolute
-              inline-flex
-              h-full
-              w-full
-              animate-ping
-              rounded-full
-              bg-rose-400
-              opacity-75
-            "
-          />
+      <span className="text-[9px] font-black text-slate-300">:</span>
 
-          <span
-            className="
-              relative
-              inline-flex
-              h-2.5
-              w-2.5
-              rounded-full
-              bg-rose-400
-            "
-          />
-        </span>
-      </div>
-
-      {/* TIMER */}
-
-      {hasCountdown ? (
-        <div className="relative mt-4 grid grid-cols-3 gap-2">
-          <div
-            className="
-              rounded-xl
-              border
-              border-white/10
-              bg-white/[0.06]
-              px-2
-              py-2
-              text-center
-            "
-          >
-            <div className="text-2xl font-black tabular-nums text-white">
-              {String(hours).padStart(2, "0")}
-            </div>
-
-            <div
-              className="
-                mt-0.5
-                text-[8px]
-                font-bold
-                uppercase
-                tracking-wider
-                text-white/45
-              "
-            >
-              Hours
-            </div>
-          </div>
-
-          <div
-            className="
-              rounded-xl
-              border
-              border-white/10
-              bg-white/[0.06]
-              px-2
-              py-2
-              text-center
-            "
-          >
-            <div className="text-2xl font-black tabular-nums text-white">
-              {String(minutes).padStart(2, "0")}
-            </div>
-
-            <div
-              className="
-                mt-0.5
-                text-[8px]
-                font-bold
-                uppercase
-                tracking-wider
-                text-white/45
-              "
-            >
-              Mins
-            </div>
-          </div>
-
-          <div
-            className="
-              rounded-xl
-              border
-              border-rose-400/20
-              bg-rose-400/10
-              px-2
-              py-2
-              text-center
-            "
-          >
-            <div className="text-2xl font-black tabular-nums text-rose-300">
-              {String(seconds).padStart(2, "0")}
-            </div>
-
-            <div
-              className="
-                mt-0.5
-                text-[8px]
-                font-bold
-                uppercase
-                tracking-wider
-                text-rose-300/60
-              "
-            >
-              Secs
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div
-          className="
-            relative
-            mt-5
-            rounded-xl
-            bg-white/5
-            py-4
-            text-center
-            text-sm
-            font-bold
-            text-white/60
-          "
-        >
-          Deal ending soon
-        </div>
-      )}
-
-      {/* DISCOUNT */}
-
-      <div
-        className="
-          relative
-          mt-4
-          overflow-hidden
-          rounded-[16px]
-          bg-gradient-to-r
-          from-pink-500
-          via-fuchsia-500
-          to-rose-500
-          px-4
-          py-3
-          text-center
-          text-white
-          shadow-[0_10px_30px_rgba(236,72,153,0.25)]
-        "
-      >
-        <div
-          className="
-            relative
-            text-[9px]
-            font-bold
-            uppercase
-            tracking-[0.18em]
-            text-white/80
-          "
-        >
-          Save up to
-        </div>
-
-        <div
-          className="
-            relative
-            mt-0.5
-            text-3xl
-            font-black
-            leading-none
-          "
-        >
-          {discountText}
-        </div>
-      </div>
+      <span className="rounded-md bg-emerald-500 px-1.5 py-1 text-[9px] font-black tabular-nums text-white">
+        {String(seconds).padStart(2, "0")}
+      </span>
     </div>
   );
 }
 
 /* =========================================================
-   HERO SCORE
+   MAIN SHOWCASE CARD
 ========================================================= */
 
-function getHeroScore(coupon: HeroCoupon) {
-  const discount = Number(coupon.discount_value) || 0;
-
-  const rating = Number(coupon.rating) || 0;
-
-  const reviews = Number(coupon.review_count) || 0;
-
-  const popularity = Number(coupon.popularity_count) || 0;
-
-  const clicks = Number(coupon.click_count) || 0;
-
-  const hasImage = coupon.image_url ? 1 : 0;
-
-  const hasPrice = coupon.sale_price != null ? 1 : 0;
-
-  const isVerified = coupon.verified === true ? 1 : 0;
-
-  const isFeatured =
-    coupon.featured === true || coupon.is_featured === true ? 1 : 0;
-
-  let expirationScore = 0;
-
-  if (coupon.expires_at) {
-    const expires = new Date(coupon.expires_at).getTime();
-
-    if (Number.isFinite(expires)) {
-      const now = Date.now();
-
-      const hoursLeft = (expires - now) / (1000 * 60 * 60);
-
-      if (hoursLeft > 0 && hoursLeft <= 24) {
-        expirationScore = 25;
-      } else if (hoursLeft > 24 && hoursLeft <= 72) {
-        expirationScore = 15;
-      } else if (hoursLeft > 72) {
-        expirationScore = 5;
-      }
-    }
-  }
-
-  return (
-    discount * 3 +
-    rating * 5 +
-    Math.min(reviews / 100, 20) +
-    Math.min(popularity / 100, 20) +
-    Math.min(clicks / 50, 15) +
-    isVerified * 20 +
-    isFeatured * 15 +
-    hasImage * 10 +
-    hasPrice * 5 +
-    expirationScore
-  );
-}
-
-/* =========================================================
-   MOBILE PRODUCT CARD
-========================================================= */
-
-function MobileProductCard({ product }: { product: HeroCoupon }) {
+function MainDealCard({ product }: { product: HeroCoupon }) {
   const discount = formatDiscount(product.discount_value);
 
   const salePrice = formatPrice(product.sale_price) || "See deal";
 
   const originalPrice = formatPrice(product.original_price);
 
-  const storeName = product.store_name || product.stores?.name || "Store";
+  const storeName = getStoreName(product);
 
-  const storeLogo = product.store_logo_url || product.stores?.logo_url || null;
-
-  const href = product.slug ? `/coupons/${product.slug}` : "/deals";
+  const storeLogo = getStoreLogo(product);
 
   return (
-    <a
-      href={href}
+    <Link
+      href={getCouponHref(product)}
       className="
         group
-        block
-        w-[165px]
-        min-w-[165px]
-        max-w-[165px]
-        flex-none
-        overflow-hidden
-        rounded-[18px]
+        absolute
+        left-1/2
+        top-1/2
+        z-30
+        w-[255px]
+        -translate-x-1/2
+        -translate-y-1/2
+        rounded-[24px]
         border
-        border-white/80
+        border-slate-100
         bg-white
-        p-2.5
-        text-slate-900
-        shadow-[0_15px_35px_rgba(0,0,0,0.25)]
-        transition-transform
+        p-3.5
+        shadow-[0_25px_65px_rgba(15,23,42,0.16)]
+        transition-all
         duration-300
-        ease-out
-        hover:scale-[1.03]
-        active:scale-[0.98]
+        hover:-translate-x-1/2
+        hover:-translate-y-[52%]
+        hover:shadow-[0_32px_80px_rgba(15,23,42,0.20)]
       "
     >
       {/* IMAGE */}
@@ -781,30 +283,30 @@ function MobileProductCard({ product }: { product: HeroCoupon }) {
       <div
         className="
           relative
-          h-[116px]
-          w-full
+          h-[190px]
           overflow-hidden
-          rounded-[13px]
+          rounded-[18px]
           bg-gradient-to-br
           from-slate-50
           via-white
-          to-slate-100
+          to-emerald-50
         "
       >
-        {/* DISCOUNT */}
+        {/* Discount */}
 
         <span
           className="
             absolute
-            left-2
-            top-2
-            z-10
+            left-3
+            top-3
+            z-20
             rounded-full
             bg-emerald-500
-            px-1.5
+            px-2.5
             py-1
             text-[9px]
             font-black
+            tracking-wide
             text-white
             shadow-sm
           "
@@ -812,39 +314,18 @@ function MobileProductCard({ product }: { product: HeroCoupon }) {
           {discount}
         </span>
 
-        {/* PRODUCT IMAGE */}
+        {/* Verified */}
 
-        <div className="flex h-full w-full items-center justify-center">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.title || "Deal"}
-              className="
-                h-full
-                w-full
-                object-contain
-                p-2.5
-                transition-transform
-                duration-300
-                group-hover:scale-[1.04]
-              "
-            />
-          ) : (
-            <span className="text-4xl">🏷️</span>
-          )}
-        </div>
-
-        {/* VERIFIED */}
-
-        {product.verified === true && (
+        {product.verified === true ? (
           <span
             className="
               absolute
-              right-2
-              top-2
+              right-3
+              top-3
+              z-20
               flex
-              h-5
-              w-5
+              h-6
+              w-6
               items-center
               justify-center
               rounded-full
@@ -852,111 +333,278 @@ function MobileProductCard({ product }: { product: HeroCoupon }) {
               text-[10px]
               font-black
               text-white
-              shadow
+              shadow-sm
             "
           >
             ✓
           </span>
-        )}
-      </div>
+        ) : null}
 
-      {/* PRICE */}
+        {/* Image */}
 
-      <div className="mt-2.5 flex min-w-0 items-end gap-1.5">
-        <span
-          className="
-            truncate
-            text-[15px]
-            font-black
-            leading-none
-            tracking-tight
-            text-slate-950
-          "
-        >
-          {salePrice}
-        </span>
-
-        {originalPrice && (
-          <span
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.title || "Featured deal"}
             className="
-              shrink-0
-              pb-0.5
-              text-[9px]
-              font-medium
-              text-slate-400
-              line-through
+              h-full
+              w-full
+              object-contain
+              p-5
+              transition-transform
+              duration-500
+              group-hover:scale-[1.04]
             "
-          >
-            {originalPrice}
-          </span>
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-5xl">
+            🏷️
+          </div>
         )}
-      </div>
-
-      {/* TITLE */}
-
-      <div
-        className="
-          mt-1
-          line-clamp-2
-          h-[28px]
-          overflow-hidden
-          text-[10px]
-          font-bold
-          leading-3.5
-          text-slate-700
-        "
-      >
-        {product.title || "Special Deal"}
       </div>
 
       {/* STORE */}
 
-      <div className="mt-1.5 flex min-w-0 items-center gap-1">
+      <div className="mt-3 flex items-center gap-1.5">
         {storeLogo ? (
           <img
             src={storeLogo}
             alt={storeName}
-            className="
-              h-3.5
-              w-3.5
-              shrink-0
-              rounded
-              object-contain
-            "
+            className="h-5 w-5 shrink-0 rounded-md object-contain"
           />
         ) : (
-          <span
-            className="
-              flex
-              h-3.5
-              w-3.5
-              shrink-0
-              items-center
-              justify-center
-              rounded
-              bg-slate-100
-              text-[7px]
-              font-bold
-              text-slate-500
-            "
-          >
-            S
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[8px] font-black text-slate-500">
+            {storeName.trim().charAt(0).toUpperCase() || "S"}
           </span>
         )}
 
-        <span
-          className="
-            min-w-0
-            truncate
-            text-[9px]
-            font-bold
-            text-slate-500
-          "
-        >
+        <span className="min-w-0 truncate text-[10px] font-bold text-slate-500">
+          {storeName}
+        </span>
+
+        <span className="ml-auto text-[9px] font-black text-emerald-600">
+          Verified
+        </span>
+      </div>
+
+      {/* TITLE */}
+
+      <h3 className="mt-2 line-clamp-2 text-[13px] font-black leading-[18px] text-slate-900">
+        {product.title || "Featured deal"}
+      </h3>
+
+      {/* PRICE */}
+
+      <div className="mt-3 flex items-end gap-2">
+        <span className="text-2xl font-black leading-none tracking-tight text-slate-950">
+          {salePrice}
+        </span>
+
+        {originalPrice ? (
+          <span className="pb-0.5 text-[10px] font-medium text-slate-400 line-through">
+            {originalPrice}
+          </span>
+        ) : null}
+      </div>
+
+      {/* FOOTER */}
+
+      <div className="mt-3 flex items-center justify-between">
+        <Countdown expiresAt={product.expires_at} />
+
+        <span className="text-[10px] font-black text-emerald-600">Shop →</span>
+      </div>
+    </Link>
+  );
+}
+
+/* =========================================================
+   SMALL SHOWCASE CARD
+========================================================= */
+
+function SmallDealCard({
+  product,
+  placement,
+}: {
+  product: HeroCoupon;
+  placement: "top" | "bottom";
+}) {
+  const discount = formatDiscount(product.discount_value);
+
+  const salePrice = formatPrice(product.sale_price) || "See deal";
+
+  const storeName = getStoreName(product);
+
+  const storeLogo = getStoreLogo(product);
+
+  const placementClass =
+    placement === "top"
+      ? "right-[4%] top-[7%] rotate-[3deg]"
+      : "right-[5%] bottom-[7%] rotate-[-3deg]";
+
+  return (
+    <Link
+      href={getCouponHref(product)}
+      className={`
+        absolute
+        z-20
+        hidden
+        w-[175px]
+        overflow-hidden
+        rounded-[20px]
+        border
+        border-white
+        bg-white
+        p-2.5
+        shadow-[0_20px_45px_rgba(15,23,42,0.13)]
+        transition-all
+        duration-300
+        hover:z-40
+        hover:rotate-0
+        hover:scale-[1.03]
+        xl:block
+        ${placementClass}
+      `}
+    >
+      <div className="relative flex h-[115px] items-center justify-center overflow-hidden rounded-[15px] bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <span className="absolute left-2 top-2 z-10 rounded-full bg-emerald-500 px-2 py-1 text-[8px] font-black text-white">
+          {discount}
+        </span>
+
+        {product.verified === true ? (
+          <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[8px] font-black text-white">
+            ✓
+          </span>
+        ) : null}
+
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.title || "Deal"}
+            className="h-full w-full object-contain p-2"
+          />
+        ) : (
+          <span className="text-4xl">🏷️</span>
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-1.5">
+        {storeLogo ? (
+          <img
+            src={storeLogo}
+            alt={storeName}
+            className="h-4 w-4 shrink-0 rounded object-contain"
+          />
+        ) : (
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-slate-100 text-[7px] font-black text-slate-500">
+            {storeName.trim().charAt(0).toUpperCase() || "S"}
+          </span>
+        )}
+
+        <span className="min-w-0 truncate text-[9px] font-bold text-slate-500">
           {storeName}
         </span>
       </div>
-    </a>
+
+      <div className="mt-1.5 line-clamp-2 text-[10px] font-bold leading-3.5 text-slate-700">
+        {product.title || "Special deal"}
+      </div>
+
+      <div className="mt-2 text-[17px] font-black leading-none tracking-tight text-slate-950">
+        {salePrice}
+      </div>
+    </Link>
+  );
+}
+
+/* =========================================================
+   MOBILE DEAL CARD
+========================================================= */
+
+function MobileDealCard({ product }: { product: HeroCoupon }) {
+  const discount = formatDiscount(product.discount_value);
+
+  const salePrice = formatPrice(product.sale_price) || "See deal";
+
+  const originalPrice = formatPrice(product.original_price);
+
+  const storeName = getStoreName(product);
+
+  const storeLogo = getStoreLogo(product);
+
+  return (
+    <Link
+      href={getCouponHref(product)}
+      className="
+        block
+        w-[185px]
+        min-w-[185px]
+        flex-none
+        overflow-hidden
+        rounded-[18px]
+        border
+        border-white/80
+        bg-white
+        p-2.5
+        shadow-[0_16px_35px_rgba(15,23,42,0.16)]
+      "
+    >
+      <div className="relative flex h-[120px] items-center justify-center overflow-hidden rounded-[14px] bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+        <span className="absolute left-2 top-2 z-10 rounded-full bg-emerald-500 px-2 py-1 text-[8px] font-black text-white">
+          {discount}
+        </span>
+
+        {product.verified === true ? (
+          <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[8px] font-black text-white">
+            ✓
+          </span>
+        ) : null}
+
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.title || "Deal"}
+            className="h-full w-full object-contain p-2.5"
+          />
+        ) : (
+          <span className="text-4xl">🏷️</span>
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-1.5">
+        {storeLogo ? (
+          <img
+            src={storeLogo}
+            alt={storeName}
+            className="h-4 w-4 rounded object-contain"
+          />
+        ) : (
+          <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-100 text-[7px] font-black text-slate-500">
+            {storeName.trim().charAt(0).toUpperCase() || "S"}
+          </span>
+        )}
+
+        <span className="min-w-0 truncate text-[9px] font-bold text-slate-500">
+          {storeName}
+        </span>
+      </div>
+
+      <div className="mt-1.5 line-clamp-2 h-[29px] overflow-hidden text-[10px] font-bold leading-3.5 text-slate-700">
+        {product.title || "Special deal"}
+      </div>
+
+      <div className="mt-2 flex items-end gap-1.5">
+        <span className="text-[17px] font-black leading-none tracking-tight text-slate-950">
+          {salePrice}
+        </span>
+
+        {originalPrice ? (
+          <span className="pb-0.5 text-[9px] font-medium text-slate-400 line-through">
+            {originalPrice}
+          </span>
+        ) : null}
+      </div>
+    </Link>
   );
 }
 
@@ -968,467 +616,372 @@ export default function Hero({
   coupons = [],
   stats = DEFAULT_STATS,
 }: HeroProps) {
-  /* ACTIVE */
+  const activeCoupons = useMemo(
+    () =>
+      coupons.filter((coupon) => {
+        if (!coupon.status) {
+          return true;
+        }
 
-  const activeCoupons = coupons.filter((coupon) => {
-    if (!coupon.status) {
-      return true;
-    }
+        return coupon.status.toLowerCase() === "active";
+      }),
+    [coupons],
+  );
 
-    return coupon.status.toLowerCase() === "active";
-  });
+  const heroCoupons = useMemo(
+    () =>
+      [...activeCoupons]
+        .sort((a, b) => getHeroScore(b) - getHeroScore(a))
+        .slice(0, 3),
+    [activeCoupons],
+  );
 
-  /* TOP 3 */
+  const mainProduct = heroCoupons[0] || null;
 
-  const heroCoupons = [...activeCoupons]
-    .sort((a, b) => getHeroScore(b) - getHeroScore(a))
-    .slice(0, 3);
+  const secondProduct = heroCoupons[1] || heroCoupons[0] || null;
 
-  const positions: Array<"left" | "top" | "bottom"> = ["left", "top", "bottom"];
+  const thirdProduct = heroCoupons[2] || heroCoupons[0] || null;
+
+  const maxDiscount = heroCoupons.reduce(
+    (max, product) => Math.max(max, getDiscountNumber(product.discount_value)),
+    0,
+  );
 
   return (
     <section
       className="
         relative
         overflow-hidden
-        rounded-[28px]
-        bg-[#07133f]
+        rounded-[30px]
+        bg-[#07153f]
         text-white
-        shadow-[0_20px_70px_rgba(7,19,63,0.22)]
+        shadow-[0_24px_75px_rgba(7,21,63,0.20)]
       "
     >
-      {/* =================================================
-          BACKGROUND
-      ================================================= */}
+      {/* ================================================= */}
+      {/* BACKGROUND                                       */}
+      {/* ================================================= */}
 
       <div className="pointer-events-none absolute inset-0">
-        {/* PURPLE */}
+        {/* Left glow */}
 
-        <div
-          className="
-            absolute
-            -right-24
-            top-1/2
-            h-[540px]
-            w-[540px]
-            -translate-y-1/2
-            rounded-full
-            bg-purple-600/30
-            blur-[110px]
-          "
-        />
+        <div className="absolute -left-24 top-1/3 h-[320px] w-[320px] rounded-full bg-emerald-400/8 blur-[100px]" />
 
-        {/* CYAN */}
+        {/* Center glow */}
 
-        <div
-          className="
-            absolute
-            left-[42%]
-            top-1/2
-            h-[340px]
-            w-[340px]
-            -translate-y-1/2
-            rounded-full
-            bg-cyan-400/10
-            blur-[90px]
-          "
-        />
+        <div className="absolute left-[42%] top-[10%] h-[260px] w-[260px] rounded-full bg-cyan-400/8 blur-[90px]" />
 
-        {/* PINK */}
+        {/* Right glow */}
 
-        <div
-          className="
-            absolute
-            right-[8%]
-            top-[8%]
-            h-36
-            w-36
-            rounded-full
-            bg-fuchsia-500/10
-            blur-[55px]
-          "
-        />
+        <div className="absolute right-[-100px] bottom-[-100px] h-[390px] w-[390px] rounded-full bg-emerald-300/10 blur-[100px]" />
 
-        {/* GREEN */}
+        {/* Small lights */}
 
-        <div
-          className="
-            absolute
-            bottom-[-80px]
-            left-[36%]
-            h-40
-            w-40
-            rounded-full
-            bg-emerald-400/5
-            blur-[65px]
-          "
-        />
+        <span className="absolute left-[61%] top-[22%] h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_5px_rgba(52,211,153,0.30)]" />
 
-        {/* PARTICLES */}
-
-        <div
-          className="
-            absolute
-            left-[51%]
-            top-[44%]
-            h-2
-            w-2
-            rounded-full
-            bg-cyan-300
-            shadow-[0_0_20px_8px_rgba(34,211,238,0.35)]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            left-[68%]
-            top-[24%]
-            h-1.5
-            w-1.5
-            rounded-full
-            bg-fuchsia-300
-            shadow-[0_0_16px_6px_rgba(217,70,239,0.35)]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            left-[82%]
-            top-[62%]
-            h-1
-            w-1
-            rounded-full
-            bg-emerald-300
-            shadow-[0_0_14px_5px_rgba(52,211,153,0.35)]
-          "
-        />
+        <span className="absolute left-[72%] top-[68%] h-1 w-1 rounded-full bg-cyan-300 shadow-[0_0_14px_5px_rgba(103,232,249,0.25)]" />
       </div>
 
-      {/* DOT GRID */}
+      {/* ================================================= */}
+      {/* CLEAN MINT BACKGROUND                            */}
+      {/* ================================================= */}
 
       <div
         className="
           pointer-events-none
           absolute
-          right-8
-          top-8
-          opacity-20
+          right-0
+          top-0
+          hidden
+          h-full
+          w-[54%]
+          bg-emerald-50
+          lg:block
         "
-      >
-        <div className="grid grid-cols-6 gap-3">
-          {Array.from({ length: 36 }).map((_, index) => (
-            <span
-              key={index}
-              className="
-                  h-1
-                  w-1
-                  rounded-full
-                  bg-white
-                "
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* =================================================
-          MAIN
-      ================================================= */}
+        style={{
+          clipPath: "polygon(16% 0, 100% 0, 100% 100%, 4% 100%)",
+        }}
+      />
 
       <div
         className="
-          relative
-          z-10
-          grid
-          min-h-[470px]
-          grid-cols-1
-          lg:grid-cols-[46%_54%]
+          pointer-events-none
+          absolute
+          right-0
+          top-0
+          hidden
+          h-full
+          w-[49%]
+          bg-gradient-to-br
+          from-white/80
+          via-emerald-50
+          to-emerald-100
+          lg:block
         "
-      >
-        {/* =================================================
-            LEFT
-        ================================================= */}
+        style={{
+          clipPath: "polygon(24% 0, 100% 0, 100% 100%, 12% 100%)",
+        }}
+      />
+
+      {/* ================================================= */}
+      {/* DESKTOP                                         */}
+      {/* ================================================= */}
+
+      <div className="relative z-10 hidden min-h-[500px] grid-cols-[46%_54%] lg:grid">
+        {/* ================================================= */}
+        {/* LEFT                                           */}
+        {/* ================================================= */}
 
         <div
           className="
             flex
             flex-col
             justify-center
-            px-6
-            py-9
-            sm:px-10
-            sm:py-11
+            px-8
+            py-12
             lg:px-12
-            lg:py-12
+            xl:px-14
           "
         >
-          {/* BADGE */}
+          {/* Badge */}
 
-          <div
-            className="
-              mb-5
-              flex
-              w-fit
-              items-center
-              gap-2
-              rounded-full
-              border
-              border-cyan-300/20
-              bg-white/[0.08]
-              px-4
-              py-2
-              text-[11px]
-              font-black
-              tracking-[0.08em]
-              text-cyan-100
-              shadow-lg
-              backdrop-blur-md
-              sm:text-xs
-            "
-          >
-            <span className="text-sm">⚡</span>
-            LIVE DEAL RADAR
+          <div className="flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-white/[0.07] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200 backdrop-blur-md">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-[9px] font-black text-slate-950">
+              +
+            </span>
+            Live deals
           </div>
 
-          {/* TITLE */}
+          {/* Title */}
 
           <h1
             className="
-              max-w-[540px]
-              text-[39px]
+              mt-6
+              max-w-[500px]
+              text-[48px]
               font-black
-              leading-[0.99]
-              tracking-[-0.035em]
-              sm:text-5xl
-              lg:text-[56px]
+              leading-[0.98]
+              tracking-[-0.045em]
+              text-white
+              xl:text-[56px]
             "
           >
-            Smart deals.
-            <span
-              className="
-                block
-                bg-gradient-to-r
-                from-emerald-400
-                to-cyan-300
-                bg-clip-text
-                text-transparent
-              "
-            >
-              Bigger savings.
+            Find today&apos;s
+            <span className="block bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">
+              best deals.
             </span>
           </h1>
 
-          {/* DESCRIPTION */}
+          {/* Description */}
 
-          <p
-            className="
-              mt-5
-              max-w-[450px]
-              text-sm
-              leading-6
-              text-white/70
-              sm:text-base
-            "
-          >
-            We track thousands of coupons and price drops so you don&apos;t have
-            to.
+          <p className="mt-5 max-w-[430px] text-[14px] leading-6 text-white/65 xl:text-[15px]">
+            Real-time coupons, limited-time offers and exclusive discounts from
+            top brands.
           </p>
 
-          {/* STATS */}
+          {/* Search */}
 
-          <div
+          <form
+            action="/search"
+            method="get"
             className="
-              mt-7
-              grid
-              max-w-[510px]
-              grid-cols-3
-              gap-2
-              sm:gap-3
+              mt-6
+              flex
+              h-12
+              w-full
+              max-w-[455px]
+              items-center
+              rounded-xl
+              bg-white
+              p-1.5
+              shadow-[0_14px_35px_rgba(0,0,0,0.16)]
             "
           >
-            <div
+            <div className="flex min-w-0 flex-1 items-center gap-2 px-3">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4 shrink-0 text-slate-400"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="6.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+
+                <path
+                  d="M16 16L20 20"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <input
+                name="q"
+                type="search"
+                placeholder="Search for a store, product or deal..."
+                className="
+                  min-w-0
+                  flex-1
+                  bg-transparent
+                  text-xs
+                  font-semibold
+                  text-slate-700
+                  outline-none
+                  placeholder:text-slate-400
+                "
+              />
+            </div>
+
+            <button
+              type="submit"
               className="
-                rounded-2xl
-                border
-                border-white/10
-                bg-white/[0.055]
-                px-3
-                py-3
-                backdrop-blur-sm
+                flex
+                h-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                bg-emerald-500
+                px-4
+                text-[10px]
+                font-black
+                uppercase
+                tracking-wide
+                text-white
+                transition-colors
+                hover:bg-emerald-600
               "
             >
-              <div
-                className="
-                  text-xl
-                  font-black
-                  tracking-tight
-                  text-white
-                  sm:text-2xl
-                "
-              >
+              Search
+            </button>
+          </form>
+
+          {/* Trust */}
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-400/15 text-[10px] text-emerald-300">
+                ✓
+              </span>
+
+              <span className="text-[9px] font-bold text-white/75">
+                Verified deals
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-cyan-400/15 text-[10px] text-cyan-300">
+                ⚡
+              </span>
+
+              <span className="text-[9px] font-bold text-white/75">
+                Updated daily
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-400/15 text-[10px] text-emerald-300">
+                ◉
+              </span>
+
+              <span className="text-[9px] font-bold text-white/75">
+                Trusted stores
+              </span>
+            </div>
+          </div>
+
+          {/* Stats */}
+
+          <div className="mt-6 flex items-center gap-5">
+            <div>
+              <div className="text-lg font-black text-white">
                 {stats.dealsTracked.toLocaleString()}
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[9px]
-                  font-semibold
-                  leading-4
-                  text-white/50
-                  sm:text-[10px]
-                "
-              >
+              <div className="text-[8px] font-bold uppercase tracking-wide text-white/45">
                 Deals tracked
-                <br />
-                today
               </div>
             </div>
 
-            <div
-              className="
-                rounded-2xl
-                border
-                border-white/10
-                bg-white/[0.055]
-                px-3
-                py-3
-                backdrop-blur-sm
-              "
-            >
-              <div
-                className="
-                  text-xl
-                  font-black
-                  tracking-tight
-                  text-white
-                  sm:text-2xl
-                "
-              >
+            <div className="h-8 w-px bg-white/10" />
+
+            <div>
+              <div className="text-lg font-black text-white">
                 {stats.newDeals.toLocaleString()}
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[9px]
-                  font-semibold
-                  leading-4
-                  text-white/50
-                  sm:text-[10px]
-                "
-              >
-                New deals
-                <br />
-                today
+              <div className="text-[8px] font-bold uppercase tracking-wide text-white/45">
+                New today
               </div>
             </div>
 
-            <div
-              className="
-                rounded-2xl
-                border
-                border-white/10
-                bg-white/[0.055]
-                px-3
-                py-3
-                backdrop-blur-sm
-              "
-            >
-              <div
-                className="
-                  text-xl
-                  font-black
-                  tracking-tight
-                  text-white
-                  sm:text-2xl
-                "
-              >
+            <div className="h-8 w-px bg-white/10" />
+
+            <div>
+              <div className="text-lg font-black text-white">
                 {stats.verifiedPercentage}%
               </div>
 
-              <div
-                className="
-                  mt-1
-                  text-[9px]
-                  font-semibold
-                  leading-4
-                  text-white/50
-                  sm:text-[10px]
-                "
-              >
-                Verified &
-                <br />
-                working
+              <div className="text-[8px] font-bold uppercase tracking-wide text-white/45">
+                Verified
               </div>
             </div>
           </div>
 
           {/* CTA */}
 
-          <a
-            href="/deals"
+          <Link
+            href="/coupons"
             className="
               mt-7
               flex
               w-fit
               items-center
-              gap-3
+              gap-2
               rounded-xl
               bg-emerald-400
-              px-6
+              px-5
               py-3.5
-              text-sm
+              text-xs
               font-black
               text-slate-950
-              shadow-[0_10px_30px_rgba(52,211,153,0.25)]
+              shadow-[0_12px_30px_rgba(52,211,153,0.22)]
               transition-all
-              duration-300
-              hover:-translate-y-1
+              duration-200
+              hover:-translate-y-0.5
               hover:bg-emerald-300
-              hover:shadow-[0_15px_35px_rgba(52,211,153,0.35)]
-              active:translate-y-0
             "
           >
-            Explore Deals
-            <span
-              className="
-                text-lg
-                transition-transform
-                duration-200
-                group-hover:translate-x-1
-              "
-            >
-              →
-            </span>
-          </a>
+            <span>Explore deals</span>
+
+            <span className="text-base">→</span>
+          </Link>
         </div>
 
-        {/* =================================================
-            DESKTOP PRODUCT SHOWCASE
-        ================================================= */}
+        {/* ================================================= */}
+        {/* RIGHT SHOWCASE                                  */}
+        {/* ================================================= */}
 
-        <div
-          className="
-            relative
-            hidden
-            min-h-[470px]
-            lg:block
-          "
-        >
-          {/* RINGS */}
+        <div className="relative min-h-[500px] overflow-hidden">
+          {/* Stage */}
 
           <div
             className="
               absolute
               left-[10%]
-              top-[17%]
-              h-[350px]
-              w-[350px]
-              rounded-full
+              top-[13%]
+              h-[370px]
+              w-[72%]
+              rounded-[38px]
               border
-              border-cyan-300/15
+              border-white
+              bg-white/55
+              shadow-[0_25px_70px_rgba(16,185,129,0.10)]
+              backdrop-blur-sm
             "
           />
 
@@ -1436,139 +989,219 @@ export default function Hero({
             className="
               absolute
               left-[15%]
-              top-[22%]
-              h-[270px]
-              w-[270px]
-              rounded-full
-              border
-              border-fuchsia-400/15
+              top-[18%]
+              h-[335px]
+              w-[62%]
+              rounded-[32px]
+              bg-white/60
             "
           />
 
-          <div
-            className="
-              absolute
-              left-[20%]
-              top-[27%]
-              h-[190px]
-              w-[190px]
-              rounded-full
-              border
-              border-white/5
-            "
-          />
+          {/* Decorative rings */}
 
-          {/* CENTER GLOW */}
+          <div className="pointer-events-none absolute left-[27%] top-[27%] h-[225px] w-[225px] rounded-full border border-emerald-300/45" />
 
-          <div
-            className="
-              pointer-events-none
-              absolute
-              left-[22%]
-              top-[27%]
-              h-[190px]
-              w-[190px]
-              rounded-full
-              bg-cyan-400/10
-              blur-[65px]
-            "
-          />
+          <div className="pointer-events-none absolute left-[32%] top-[32%] h-[175px] w-[175px] rounded-full border border-cyan-300/35" />
 
-          {/* CARDS */}
+          {/* Main deal */}
 
-          {heroCoupons.map((product, index) => (
-            <DesktopProductCard
-              key={product.id}
-              product={product}
-              position={positions[index]}
-            />
-          ))}
+          {mainProduct ? <MainDealCard product={mainProduct} /> : null}
 
-          {/* COUNTDOWN */}
+          {/* Top card */}
 
-          {heroCoupons.length > 0 && (
-            <Countdown
-              expiresAt={heroCoupons[0]?.expires_at}
-              discount={heroCoupons[0]?.discount_value}
-            />
-          )}
+          {secondProduct ? (
+            <SmallDealCard product={secondProduct} placement="top" />
+          ) : null}
+
+          {/* Bottom card */}
+
+          {thirdProduct ? (
+            <SmallDealCard product={thirdProduct} placement="bottom" />
+          ) : null}
+
+          {/* Discount badge */}
+
+          {maxDiscount > 0 ? (
+            <div
+              className="
+                absolute
+                bottom-[8%]
+                left-[10%]
+                z-40
+                rounded-[20px]
+                bg-emerald-500
+                px-5
+                py-3.5
+                text-white
+                shadow-[0_18px_40px_rgba(16,185,129,0.24)]
+              "
+            >
+              <div className="text-[8px] font-black uppercase tracking-[0.14em] text-white/75">
+                Save up to
+              </div>
+
+              <div className="mt-0.5 text-[30px] font-black leading-none tracking-[-0.04em]">
+                {maxDiscount}%
+              </div>
+
+              <div className="mt-1 text-[8px] font-bold uppercase tracking-wide text-white/75">
+                selected deals
+              </div>
+            </div>
+          ) : null}
+
+          {/* Shop label */}
+
+          <div className="absolute right-[8%] bottom-[9%] z-20 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-[9px] font-black text-emerald-700 shadow-sm backdrop-blur-sm">
+            Shop smart →
+          </div>
+        </div>
+      </div>
+
+      {/* ================================================= */}
+      {/* MOBILE                                           */}
+      {/* ================================================= */}
+
+      <div className="relative z-10 block px-4 pb-5 pt-7 lg:hidden">
+        {/* Badge */}
+
+        <div className="flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-white/[0.08] px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-200">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-[9px] text-slate-950">
+            +
+          </span>
+          Live deals
         </div>
 
-        {/* =================================================
-            MOBILE
-        ================================================= */}
+        {/* Title */}
 
-        <div
-          className="
-            block
-            min-w-0
-            px-4
-            pb-7
-            lg:hidden
-          "
+        <h1 className="mt-5 text-[37px] font-black leading-[0.98] tracking-[-0.045em] text-white">
+          Find today&apos;s
+          <span className="block bg-gradient-to-r from-emerald-400 to-cyan-300 bg-clip-text text-transparent">
+            best deals.
+          </span>
+        </h1>
+
+        {/* Description */}
+
+        <p className="mt-4 max-w-[350px] text-[13px] leading-5 text-white/65">
+          Real-time coupons, limited-time offers and exclusive discounts from
+          top brands.
+        </p>
+
+        {/* Search */}
+
+        <form
+          action="/search"
+          method="get"
+          className="mt-5 flex h-11 items-center rounded-xl bg-white p-1"
         >
-          {/* PRODUCT SCROLLER */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 px-2.5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-4 w-4 shrink-0 text-slate-400"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="6.5"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
 
-          <div
-            className="
-              -mx-1
-              flex
-              w-full
-              min-w-0
-              gap-3
-              overflow-x-auto
-              px-1
-              pb-2
-              pt-2
-              overscroll-x-contain
-              [scrollbar-width:none]
-              [&::-webkit-scrollbar]:hidden
-            "
-          >
-            {heroCoupons.map((product) => (
-              <MobileProductCard key={product.id} product={product} />
-            ))}
+              <path
+                d="M16 16L20 20"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <input
+              name="q"
+              type="search"
+              placeholder="Search stores, products..."
+              className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+            />
           </div>
 
-          {/* SWIPE */}
+          <button
+            type="submit"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-sm font-black text-white"
+            aria-label="Search"
+          >
+            →
+          </button>
+        </form>
 
-          {heroCoupons.length > 1 && (
-            <div
-              className="
-                mt-2
-                flex
-                items-center
-                justify-center
-                gap-1.5
-                text-[9px]
-                font-semibold
-                text-white/40
-              "
-            >
-              <span>Swipe to explore deals</span>
+        {/* Product cards */}
 
-              <span className="text-white/70">→</span>
+        {heroCoupons.length > 0 ? (
+          <div className="mt-5">
+            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {heroCoupons.map((product) => (
+                <MobileDealCard key={product.id} product={product} />
+              ))}
             </div>
-          )}
+          </div>
+        ) : null}
 
-          {/* MOBILE COUNTDOWN */}
+        {/* Trust */}
 
-          {heroCoupons.length > 0 && (
-            <div
-              className="
-                relative
-                mt-4
-                h-[184px]
-                w-full
-              "
-            >
-              <Countdown
-                expiresAt={heroCoupons[0]?.expires_at}
-                discount={heroCoupons[0]?.discount_value}
-              />
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-2.5 text-center">
+            <div className="text-sm font-black text-white">
+              {stats.dealsTracked.toLocaleString()}
             </div>
-          )}
+
+            <div className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-white/45">
+              Tracked
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-2.5 text-center">
+            <div className="text-sm font-black text-white">
+              {stats.newDeals.toLocaleString()}
+            </div>
+
+            <div className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-white/45">
+              New today
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-2.5 text-center">
+            <div className="text-sm font-black text-white">
+              {stats.verifiedPercentage}%
+            </div>
+
+            <div className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-white/45">
+              Verified
+            </div>
+          </div>
         </div>
+
+        {/* CTA */}
+
+        <Link
+          href="/coupons"
+          className="
+            mt-4
+            flex
+            h-11
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            bg-emerald-400
+            text-xs
+            font-black
+            text-slate-950
+          "
+        >
+          Explore deals
+          <span className="text-base">→</span>
+        </Link>
       </div>
     </section>
   );

@@ -15,12 +15,11 @@ export default function FavoriteButton({
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Kiểm tra trạng thái đã lưu khi component được tải
   useEffect(() => {
-    const sessionId = getDealPilotSessionId();
     const favorites = JSON.parse(
       localStorage.getItem("dealpilot_favorites") || "[]",
     );
+
     setSaved(favorites.includes(String(couponId)));
   }, [couponId]);
 
@@ -50,6 +49,7 @@ export default function FavoriteButton({
       }
 
       const id = String(couponId);
+
       const favorites = JSON.parse(
         localStorage.getItem("dealpilot_favorites") || "[]",
       );
@@ -64,7 +64,6 @@ export default function FavoriteButton({
         setSaved(true);
         onChange?.(true);
 
-        // Phát sự kiện để báo cho Header (SavedLink) cập nhật số lượng
         window.dispatchEvent(new Event("dealpilot-favorites-changed"));
       } else {
         updatedFavorites = favorites.filter((item: string) => item !== id);
@@ -72,7 +71,6 @@ export default function FavoriteButton({
         setSaved(false);
         onChange?.(false);
 
-        // Phát sự kiện để báo cho Header (SavedLink) cập nhật số lượng
         window.dispatchEvent(new Event("dealpilot-favorites-changed"));
       }
 
@@ -93,9 +91,81 @@ export default function FavoriteButton({
       onClick={handleClick}
       disabled={loading}
       aria-label={saved ? "Remove from favorites" : "Save coupon"}
-      className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl shadow-md transition hover:scale-105 hover:bg-gray-50 disabled:opacity-50"
+      className="
+        absolute
+        right-2
+        top-2
+        z-30
+        flex
+        h-8
+        w-8
+        items-center
+        justify-center
+        rounded-full
+        bg-transparent
+        p-0
+        transition-transform
+        duration-200
+        hover:scale-110
+        disabled:cursor-not-allowed
+        disabled:opacity-50
+      "
     >
-      {saved ? "♥" : "♡"}
+      {saved ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="
+            block
+            h-[18px]
+            w-[18px]
+            shrink-0
+            text-black
+          "
+          aria-hidden="true"
+        >
+          <path
+            d="
+              M20.84 8.61
+              c0 5.2-8.84 10.39-8.84 10.39
+              S3.16 13.81 3.16 8.61
+              C3.16 5.63 5.31 3.5 8.17 3.5
+              c1.72 0 3.3 0.81 3.83 2.18
+              C12.53 4.31 14.11 3.5 15.83 3.5
+              c2.86 0 5.01 2.13 5.01 5.11Z
+            "
+          />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="
+            block
+            h-[18px]
+            w-[18px]
+            shrink-0
+            text-slate-500
+          "
+          aria-hidden="true"
+        >
+          <path
+            d="
+              M20.84 8.61
+              c0 5.2-8.84 10.39-8.84 10.39
+              S3.16 13.81 3.16 8.61
+              C3.16 5.63 5.31 3.5 8.17 3.5
+              c1.72 0 3.3 0.81 3.83 2.18
+              C12.53 4.31 14.11 3.5 15.83 3.5
+              c2.86 0 5.01 2.13 5.01 5.11Z
+            "
+          />
+        </svg>
+      )}
     </button>
   );
 }

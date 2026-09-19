@@ -1,223 +1,180 @@
 import Link from "next/link";
 
-const shopLinks = [
-  { label: "Stores", href: "/stores" },
-  { label: "Coupons", href: "/coupons" },
-  { label: "Deals", href: "/deals" },
-  { label: "Trending", href: "/trending" },
+const categories = [
+  { name: "Electronics", slug: "electronics" },
+  { name: "Home", slug: "home" },
+  { name: "Fashion", slug: "fashion" },
+  { name: "Beauty", slug: "beauty" },
 ];
 
-const exploreLinks = [
-  { label: "Categories", href: "/categories" },
-  { label: "Top Brands", href: "/top-brands" },
-  { label: "Promo Codes", href: "/promo-codes" },
-  { label: "Blog", href: "/blog" },
-];
-
-const helpLinks = [
-  { label: "Saved Coupons", href: "/saved" },
-  { label: "Contact", href: "/contact" },
+const popularLinks = [
+  { name: "All Coupons", href: "/coupons" },
+  { name: "Categories", href: "/categories" },
+  { name: "Saved Deals", href: "/saved" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-slate-200 bg-slate-950 text-white sm:mt-20">
+    <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* =====================================================
+        {/* =========================================================
             MAIN FOOTER
-        ====================================================== */}
+        ========================================================= */}
 
-        <div
-          className="
-            grid
-            gap-10
-            py-10
-            sm:grid-cols-2
-            sm:py-12
-            lg:grid-cols-[1.5fr_1fr_1fr_1fr]
-            lg:gap-12
-            lg:py-14
-          "
-        >
-          {/* ===================================================
+        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:py-14">
+          {/* =======================================================
               BRAND
-          =================================================== */}
+          ======================================================= */}
 
-          <div className="max-w-sm">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
+              className="inline-flex items-center"
               aria-label="DealPilot Home"
-              className="inline-block text-2xl font-black tracking-tight"
             >
-              Deal<span className="text-emerald-400">Pilot</span>
+              <span className="text-2xl font-black tracking-[-0.05em] text-slate-950">
+                Deal
+                <span className="text-emerald-500">Pilot</span>
+              </span>
             </Link>
 
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              Find the latest verified coupon codes, promo codes, and online
-              deals from your favorite stores.
+            <p className="mt-4 max-w-sm text-sm font-medium leading-6 text-slate-500">
+              Discover coupons, discounts and fresh deals from stores you shop
+              every day.
             </p>
 
-            {/* STATUS */}
+            <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Fresh deals updated regularly
+            </div>
+          </div>
 
-            <div
+          {/* =======================================================
+              CATEGORIES
+          ======================================================= */}
+
+          <div>
+            <h3 className="text-sm font-black text-slate-950">Categories</h3>
+
+            <div className="mt-4 space-y-3">
+              {categories.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/categories/${category.slug}`}
+                  className="
+                    block
+                    text-sm
+                    font-medium
+                    text-slate-500
+                    transition
+                    hover:text-emerald-600
+                  "
+                >
+                  {category.name}
+                </Link>
+              ))}
+
+              <Link
+                href="/categories"
+                className="
+                  block
+                  pt-1
+                  text-sm
+                  font-black
+                  text-emerald-600
+                  transition
+                  hover:text-emerald-700
+                "
+              >
+                View all categories →
+              </Link>
+            </div>
+          </div>
+
+          {/* =======================================================
+              QUICK LINKS
+          ======================================================= */}
+
+          <div>
+            <h3 className="text-sm font-black text-slate-950">Explore</h3>
+
+            <div className="mt-4 space-y-3">
+              {popularLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="
+                    block
+                    text-sm
+                    font-medium
+                    text-slate-500
+                    transition
+                    hover:text-emerald-600
+                  "
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* =======================================================
+              ABOUT
+          ======================================================= */}
+
+          <div>
+            <h3 className="text-sm font-black text-slate-950">DealPilot</h3>
+
+            <p className="mt-4 text-sm font-medium leading-6 text-slate-500">
+              Compare offers, discover savings and quickly find useful coupon
+              codes and promotions.
+            </p>
+
+            <Link
+              href="/coupons"
               className="
                 mt-5
                 inline-flex
                 items-center
-                gap-2
-                rounded-full
-                border
-                border-slate-800
-                bg-slate-900
-                px-3
-                py-1.5
+                justify-center
+                rounded-xl
+                bg-emerald-500
+                px-4
+                py-2.5
+                text-xs
+                font-black
+                text-white
+                shadow-sm
+                transition
+                hover:bg-emerald-600
               "
             >
-              <span className="relative flex h-2.5 w-2.5">
-                <span
-                  className="
-                    absolute
-                    h-full
-                    w-full
-                    animate-ping
-                    rounded-full
-                    bg-emerald-400
-                    opacity-50
-                  "
-                />
-
-                <span className="relative h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              </span>
-
-              <span className="text-xs font-semibold text-slate-400">
-                Deals updated regularly
-              </span>
-            </div>
-          </div>
-
-          {/* ===================================================
-              SHOP
-          =================================================== */}
-
-          <div>
-            <h3 className="text-sm font-bold text-white">Shop</h3>
-
-            <nav className="mt-4 space-y-3">
-              {shopLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="
-                    block
-                    text-sm
-                    text-slate-400
-                    transition-colors
-                    duration-200
-                    hover:text-emerald-400
-                  "
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* ===================================================
-              EXPLORE
-          =================================================== */}
-
-          <div>
-            <h3 className="text-sm font-bold text-white">Explore</h3>
-
-            <nav className="mt-4 space-y-3">
-              {exploreLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="
-                    block
-                    text-sm
-                    text-slate-400
-                    transition-colors
-                    duration-200
-                    hover:text-emerald-400
-                  "
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* ===================================================
-              HELP
-          =================================================== */}
-
-          <div>
-            <h3 className="text-sm font-bold text-white">Help</h3>
-
-            <nav className="mt-4 space-y-3">
-              {helpLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="
-                    block
-                    text-sm
-                    text-slate-400
-                    transition-colors
-                    duration-200
-                    hover:text-emerald-400
-                  "
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+              Browse deals
+            </Link>
           </div>
         </div>
 
-        {/* =====================================================
+        {/* =========================================================
             BOTTOM BAR
-        ====================================================== */}
+        ========================================================= */}
 
-        <div
-          className="
-            flex
-            flex-col
-            gap-3
-            border-t
-            border-slate-800
-            py-5
-            text-xs
-            text-slate-500
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-          "
-        >
-          <p>© {new Date().getFullYear()} DealPilot AI. All rights reserved.</p>
+        <div className="flex flex-col gap-3 border-t border-slate-100 py-6 text-xs font-medium text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} DealPilot. All rights reserved.</p>
 
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/privacy"
-              className="transition-colors hover:text-slate-300"
-            >
-              Privacy
+          <div className="flex items-center gap-4">
+            <Link href="/coupons" className="transition hover:text-slate-600">
+              Coupons
             </Link>
 
             <Link
-              href="/terms"
-              className="transition-colors hover:text-slate-300"
+              href="/categories"
+              className="transition hover:text-slate-600"
             >
-              Terms
+              Categories
             </Link>
 
-            <Link
-              href="/contact"
-              className="transition-colors hover:text-slate-300"
-            >
-              Contact
+            <Link href="/saved" className="transition hover:text-slate-600">
+              Saved
             </Link>
           </div>
         </div>

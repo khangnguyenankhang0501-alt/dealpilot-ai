@@ -8,59 +8,33 @@ interface SearchPageProps {
   }>;
 }
 
-type StoreRow = {
-  id: string;
-  name: string | null;
-  slug: string | null;
-  logo_url: string | null;
-};
-
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const params = await searchParams;
-
-  const query = typeof params?.q === "string" ? params.q.trim() : "";
+  const { q } = await searchParams;
+  const query = q?.trim() || "";
 
   if (!query) {
     return (
-      <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-          <div className="mb-6 text-xs font-semibold text-slate-400">
-            <Link href="/" className="transition-colors hover:text-slate-700">
-              Home
-            </Link>
+      <main className="min-h-[70vh] bg-slate-50">
+        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-12 text-center shadow-[0_8px_30px_rgba(15,23,42,0.04)] sm:px-10 sm:py-16">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+              DealPilot
+            </p>
 
-            <span className="mx-2">/</span>
-
-            <span className="text-slate-500">Search</span>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
-              🔍
-            </div>
-
-            <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900">
-              Search DealPilot
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Search coupons & deals
             </h1>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-              Search for coupons, products, coupon codes, or stores using the
-              search bar above.
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">
+              Search for a store, coupon, promo code, or deal using the search
+              box above.
             </p>
 
             <Link
               href="/coupons"
-              className="
-                mx-auto mt-6 flex h-11 w-fit
-                items-center justify-center
-                rounded-xl bg-emerald-500
-                px-5 text-xs font-black
-                uppercase tracking-wide text-white
-                transition-colors
-                hover:bg-emerald-600
-              "
+              className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
-              Browse coupons
+              Browse all coupons
             </Link>
           </div>
         </div>
@@ -68,188 +42,142 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
   }
 
-  /*
-   * Escape characters that have special meaning
-   * inside a PostgREST .or() filter.
-   */
-  const safeQuery = query
-    .replace(/\\/g, "")
-    .replace(/[%_,()]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const safeQuery = query.replace(/[%_,()]/g, "").trim();
+
+  if (!safeQuery) {
+    return (
+      <main className="min-h-[70vh] bg-slate-50">
+        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-12 text-center shadow-[0_8px_30px_rgba(15,23,42,0.04)] sm:px-10 sm:py-16">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+              DealPilot
+            </p>
+
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Search coupons & deals
+            </h1>
+
+            <p className="mt-4 text-sm leading-6 text-slate-500">
+              Enter a store or deal name to start searching.
+            </p>
+
+            <Link
+              href="/"
+              className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Back home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const now = new Date().toISOString();
 
-  /*
-   * Search in:
-   *
-   * - title
-   * - store_name
-   * - slug
-   * - coupon_code
-   *
-   * ilike makes the search case-insensitive.
-   */
-  const { data: couponRows, error } = await supabase
+  const { data, error } = await supabase
     .from("coupons")
-    .select("*")
-    .eq("status", "Active")
-    .or(
-      `title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%,slug.ilike.%${safeQuery}%,coupon_code.ilike.%${safeQuery}%`,
+    .select(
+      `
+        id,
+        title,
+        slug,
+        coupon_code,
+        affiliate_url,
+        image_url,
+        discount_value,
+        original_price,
+        sale_price,
+        status,
+        expires_at,
+        verified,
+        rating,
+        review_count,
+        popularity_count,
+        click_count,
+        store_name,
+        store_id,
+        shipping_text,
+        sold_text,
+        badge,
+        is_exclusive,
+        created_at,
+        stores!coupons_store_id_fkey (
+          id,
+          name,
+          slug,
+          logo_url
+        )
+      `,
     )
+    .or(`title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%`)
+    .or(`status.eq.active,status.is.null`)
     .or(`expires_at.is.null,expires_at.gte.${now}`)
     .order("created_at", {
       ascending: false,
     })
-    .limit(100);
+    .limit(24);
 
-  /*
-   * Load stores separately so CouponCard
-   * can continue displaying store logos.
-   */
-  const { data: storeRows } = await supabase
-    .from("stores")
-    .select("id, name, slug, logo_url");
-
-  const storesByName = new Map<string, StoreRow>();
-
-  for (const store of (storeRows || []) as StoreRow[]) {
-    if (!store.name) {
-      continue;
-    }
-
-    storesByName.set(store.name.trim().toLowerCase(), store);
-  }
-
-  /*
-   * Attach matching store information
-   * to each coupon.
-   */
-  const coupons = (couponRows || []).map((coupon: any) => {
-    const storeKey =
-      typeof coupon.store_name === "string"
-        ? coupon.store_name.trim().toLowerCase()
-        : "";
-
-    const store = storeKey ? storesByName.get(storeKey) : null;
-
-    return {
-      ...coupon,
-
-      stores: store
-        ? {
-            id: store.id,
-            name: store.name,
-            slug: store.slug,
-            logo_url: store.logo_url,
-          }
-        : null,
-    };
-  });
+  const coupons = data ?? [];
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        {/* ===================================================== */}
-        {/* BREADCRUMB                                           */}
-        {/* ===================================================== */}
-
-        <div className="mb-5 text-xs font-semibold text-slate-400">
-          <Link href="/" className="transition-colors hover:text-slate-700">
-            Home
-          </Link>
-
-          <span className="mx-2">/</span>
-
-          <span className="text-slate-500">Search</span>
-        </div>
-
-        {/* ===================================================== */}
-        {/* SEARCH TITLE                                         */}
-        {/* ===================================================== */}
-
-        <div className="mb-7">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-500">
+    <main className="min-h-[70vh] bg-slate-50">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-600">
             Search results
           </p>
 
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            Results for "{query}"
+          <h1 className="mt-2 break-words text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Results for &quot;{query}&quot;
           </h1>
 
-          <p className="mt-2 text-sm font-medium text-slate-500">
-            {error
-              ? "We couldn't load the search results."
-              : coupons.length > 0
-                ? `${coupons.length} ${
-                    coupons.length === 1 ? "deal" : "deals"
-                  } found`
-                : "No matching deals found"}
+          <p className="mt-3 text-sm text-slate-500">
+            {coupons.length > 0
+              ? `${coupons.length} active ${
+                  coupons.length === 1 ? "deal" : "deals"
+                } found.`
+              : "No active deals found for this search."}
           </p>
         </div>
 
-        {/* ===================================================== */}
-        {/* ERROR                                                */}
-        {/* ===================================================== */}
-
-        {error ? (
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 px-5 py-4">
-            <p className="text-sm font-bold text-rose-600">Search failed.</p>
-
-            <p className="mt-1 text-xs font-medium text-rose-400">
-              Please try the search again.
-            </p>
+        {coupons.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {coupons.map((coupon) => (
+              <CouponCard key={coupon.id} coupon={coupon} />
+            ))}
           </div>
-        ) : null}
-
-        {/* ===================================================== */}
-        {/* NO RESULTS                                           */}
-        {/* ===================================================== */}
-
-        {!error && coupons.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
-              🔍
+        ) : (
+          <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-12 text-center shadow-[0_8px_30px_rgba(15,23,42,0.04)] sm:px-10 sm:py-16">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-400">
+              ?
             </div>
 
-            <h2 className="mt-5 text-xl font-black tracking-tight text-slate-900">
-              No deals found
+            <h2 className="mt-5 text-xl font-bold text-slate-900">
+              No matching deals
             </h2>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-              We couldn't find any active coupons matching "{query}".
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
+              Try a different store name, coupon title, or a broader search.
             </p>
 
-            <Link
-              href="/coupons"
-              className="
-                mx-auto mt-6 flex h-11 w-fit
-                items-center justify-center
-                rounded-xl bg-emerald-500
-                px-5 text-xs font-black
-                uppercase tracking-wide text-white
-                transition-colors
-                hover:bg-emerald-600
-              "
-            >
-              Browse all coupons
-            </Link>
-          </div>
-        ) : null}
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <Link
+                href="/coupons"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Browse coupons
+              </Link>
 
-        {/* ===================================================== */}
-        {/* RESULTS                                              */}
-        {/* ===================================================== */}
-
-        {!error && coupons.length > 0 ? (
-          <section>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-              {coupons.map((coupon: any) => (
-                <CouponCard key={coupon.id} coupon={coupon} />
-              ))}
+              <Link
+                href="/deals"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Browse deals
+              </Link>
             </div>
-          </section>
-        ) : null}
+          </div>
+        )}
       </div>
     </main>
   );

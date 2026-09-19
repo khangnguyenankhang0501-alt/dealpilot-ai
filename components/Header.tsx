@@ -14,14 +14,38 @@ type SearchResult = {
 
 const mainNavigation = [
   {
+    label: "Stores",
+    href: "/stores",
+  },
+  {
     label: "Coupons",
     href: "/coupons",
+  },
+  {
+    label: "Deals",
+    href: "/deals",
+  },
+  {
+    label: "Categories",
+    href: "/categories",
   },
 ];
 
 function isNavigationActive(pathname: string, href: string) {
+  if (href === "/stores") {
+    return pathname === "/stores" || pathname.startsWith("/stores/");
+  }
+
   if (href === "/coupons") {
     return pathname === "/coupons" || pathname.startsWith("/coupons/");
+  }
+
+  if (href === "/deals") {
+    return pathname === "/deals" || pathname.startsWith("/deals/");
+  }
+
+  if (href === "/categories") {
+    return pathname === "/categories" || pathname.startsWith("/categories/");
   }
 
   return pathname === href;
@@ -85,17 +109,17 @@ export default function Header() {
     setResults([]);
   };
 
-  const handleSearchEnter = () => {
-    const searchTerm = query.trim();
+  const submitSearch = () => {
+    const searchValue = query.trim();
 
-    if (!searchTerm) {
+    if (!searchValue) {
       return;
     }
 
+    setResults([]);
     setSearchFocused(false);
-    setMobileMenuOpen(false);
 
-    router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+    router.push(`/search?q=${encodeURIComponent(searchValue)}`);
   };
 
   return (
@@ -128,13 +152,13 @@ export default function Header() {
         >
           <div
             className="
-              grid
-              min-h-[76px]
-              grid-cols-[190px_minmax(280px,1fr)_220px]
-              items-center
-              gap-6
-              xl:gap-8
-            "
+    grid
+    min-h-[76px]
+    grid-cols-[190px_minmax(280px,1fr)_auto]
+    items-center
+    gap-6
+    xl:gap-8
+  "
           >
             {/* ===================================================
                 LOGO
@@ -164,25 +188,6 @@ export default function Header() {
                 >
                   Pilot
                 </span>
-              </span>
-
-              <span
-                className="
-                  ml-2
-                  hidden
-                  rounded-full
-                  bg-emerald-50
-                  px-2
-                  py-1
-                  text-[8px]
-                  font-black
-                  uppercase
-                  tracking-[0.12em]
-                  text-emerald-600
-                  xl:inline-flex
-                "
-              >
-                Deals
               </span>
             </Link>
 
@@ -227,17 +232,16 @@ export default function Header() {
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleSearchEnter();
-                    }
-                  }}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => {
                     setTimeout(() => {
                       setSearchFocused(false);
                     }, 150);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      submitSearch();
+                    }
                   }}
                   placeholder="Search coupons, stores..."
                   className="
@@ -333,21 +337,20 @@ export default function Header() {
 
             <nav
               className="
-                flex
-                items-center
-                justify-self-end
-              "
+    flex
+    items-center
+    justify-self-end
+    whitespace-nowrap
+  "
             >
               <div
                 className="
-                  grid
-                  w-[220px]
-                  grid-cols-2
-                  gap-2
-                "
+      flex
+      items-center
+      gap-1
+      lg:gap-2
+    "
               >
-                {/* COUPONS */}
-
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);
 
@@ -356,39 +359,39 @@ export default function Header() {
                       key={item.href}
                       href={item.href}
                       className={`
-                        relative
-                        flex
-                        min-h-[44px]
-                        items-center
-                        justify-center
-                        rounded-xl
-                        px-3
-                        py-2.5
-                        text-sm
-                        font-bold
-                        transition-all
-                        duration-200
-                        ${
-                          active
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600"
-                        }
-                      `}
+            relative
+            flex
+            min-h-[44px]
+            items-center
+            justify-center
+            rounded-xl
+            px-3
+            py-2.5
+            text-sm
+            font-bold
+            transition-all
+            duration-200
+            ${
+              active
+                ? "bg-emerald-50 text-emerald-700"
+                : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600"
+            }
+          `}
                     >
                       {item.label}
 
                       {active && (
                         <span
                           className="
-                            absolute
-                            bottom-1
-                            left-1/2
-                            h-1
-                            w-1
-                            -translate-x-1/2
-                            rounded-full
-                            bg-emerald-500
-                          "
+                absolute
+                bottom-1
+                left-1/2
+                h-1
+                w-1
+                -translate-x-1/2
+                rounded-full
+                bg-emerald-500
+              "
                         />
                       )}
                     </Link>
@@ -399,14 +402,15 @@ export default function Header() {
 
                 <div
                   className="
-                    flex
-                    min-h-[44px]
-                    items-center
-                    justify-center
-                    rounded-xl
-                    transition-colors
-                    hover:bg-slate-50
-                  "
+        ml-1
+        flex
+        min-h-[44px]
+        items-center
+        justify-center
+        border-l
+        border-slate-200
+        pl-3
+      "
                 >
                   <SavedLink />
                 </div>
@@ -470,7 +474,7 @@ export default function Header() {
             <Link
               href="/saved"
               onClick={closeMobileMenu}
-              className="
+              className={`
                 flex
                 h-10
                 w-10
@@ -478,11 +482,13 @@ export default function Header() {
                 justify-center
                 rounded-xl
                 text-xl
-                text-slate-600
                 transition
-                hover:bg-slate-100
-                hover:text-emerald-600
-              "
+                ${
+                  pathname === "/saved" || pathname.startsWith("/saved/")
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-emerald-600"
+                }
+              `}
               aria-label="Saved coupons"
             >
               ♡
@@ -556,17 +562,16 @@ export default function Header() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleSearchEnter();
-                }
-              }}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => {
                 setTimeout(() => {
                   setSearchFocused(false);
                 }, 150);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  submitSearch();
+                }
               }}
               placeholder="Search coupons, stores..."
               className="
@@ -671,7 +676,7 @@ export default function Header() {
           >
             <nav className="px-4 py-4">
               <div className="grid grid-cols-2 gap-2">
-                {/* COUPONS */}
+                {/* MAIN LINKS */}
 
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);

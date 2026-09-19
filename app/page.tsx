@@ -1,9 +1,11 @@
-import TrendingCoupons from "@/components/TrendingCoupons";
-import LatestCoupons from "@/components/LatestCoupons";
+import HomeTrending from "@/components/HomeTrending";
+import HomeLatest from "@/components/HomeLatest";
 import { supabase } from "@/lib/supabaseClient";
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
-import FeaturedCoupons from "@/components/FeaturedCoupons";
+import HomeFeatured from "@/components/HomeFeatured";
+import HomeSpotlight from "@/components/HomeSpotlight";
+import HomeCategories from "@/components/HomeCategories";
 
 export const metadata: Metadata = {
   title: "DealPilot - Best Coupon Codes, Promo Codes & Discounts",
@@ -196,6 +198,10 @@ export default async function HomePage() {
           <Hero coupons={heroCoupons} stats={heroStats} />
         </section>
 
+        <HomeSpotlight />
+
+        <HomeCategories />
+
         {/* ===================================================
             TRENDING
         =================================================== */}
@@ -207,7 +213,7 @@ export default async function HomePage() {
             lg:mt-12
           "
         >
-          <TrendingCoupons />
+          <HomeTrending />
         </section>
 
         {/* ===================================================
@@ -221,7 +227,7 @@ export default async function HomePage() {
             lg:mt-14
           "
         >
-          <FeaturedCoupons />
+          <HomeFeatured />
         </section>
 
         {/* ===================================================
@@ -238,7 +244,7 @@ export default async function HomePage() {
             lg:pb-18
           "
         >
-          <LatestCoupons />
+          <HomeLatest />
         </section>
       </div>
     </main>
