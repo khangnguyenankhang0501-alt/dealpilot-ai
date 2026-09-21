@@ -7,9 +7,14 @@ import { supabase } from "@/lib/supabaseClient";
 import SavedLink from "@/components/SavedLink";
 
 type SearchResult = {
-  title: string;
-  slug: string;
+  id: string | number;
+  title: string | null;
+  slug: string | null;
   store_name: string | null;
+  image_url: string | null;
+  sale_price: number | string | null;
+  original_price: number | string | null;
+  discount_value: number | string | null;
 };
 
 const mainNavigation = [
@@ -51,6 +56,34 @@ function isNavigationActive(pathname: string, href: string) {
   return pathname === href;
 }
 
+function formatPrice(value?: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  return `$${numberValue.toFixed(2)}`;
+}
+
+function formatDiscount(value?: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  return `${numberValue}% OFF`;
+}
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -59,36 +92,62 @@ export default function Header() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     const searchQuery = query.trim();
 
     if (!searchQuery) {
       setResults([]);
+      setSearchLoading(false);
       return;
     }
 
     const fetchResults = async () => {
-      const safeQuery = searchQuery.replace(/[%_,]/g, "");
+      const safeQuery = searchQuery.replace(/[%_,]/g, "").trim();
 
       if (!safeQuery) {
         setResults([]);
+        setSearchLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("title, slug, store_name")
-        .or(`title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%`)
-        .limit(6);
+      setSearchLoading(true);
 
-      if (error) {
-        console.error("Search error:", error);
+      try {
+        const { data, error } = await supabase
+          .from("coupons")
+          .select(
+            `
+              id,
+              title,
+              slug,
+              store_name,
+              image_url,
+              sale_price,
+              original_price,
+              discount_value
+            `,
+          )
+          .eq("status", "Active")
+          .or(`title.ilike.%${safeQuery}%,store_name.ilike.%${safeQuery}%`)
+          .limit(6);
+
+        if (error) {
+          console.error("Search error:", error);
+
+          setResults([]);
+          return;
+        }
+
+        setResults((data ?? []) as SearchResult[]);
+      } catch (error) {
+        console.error("Unexpected search error:", error);
+
         setResults([]);
-        return;
+      } finally {
+        setSearchLoading(false);
       }
-
-      setResults(data ?? []);
     };
 
     const timer = setTimeout(fetchResults, 300);
@@ -107,6 +166,7 @@ export default function Header() {
   const clearSearch = () => {
     setQuery("");
     setResults([]);
+    setSearchFocused(false);
   };
 
   const submitSearch = () => {
@@ -152,13 +212,13 @@ export default function Header() {
         >
           <div
             className="
-    grid
-    min-h-[76px]
-    grid-cols-[190px_minmax(280px,1fr)_auto]
-    items-center
-    gap-6
-    xl:gap-8
-  "
+              grid
+              min-h-[76px]
+              grid-cols-[190px_minmax(280px,1fr)_auto]
+              items-center
+              gap-6
+              xl:gap-8
+            "
           >
             {/* ===================================================
                 LOGO
@@ -207,6 +267,7 @@ export default function Header() {
                   bg-slate-50/80
                   transition-all
                   duration-200
+
                   ${
                     searchFocused
                       ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08),0_8px_25px_rgba(15,23,42,0.06)]"
@@ -242,6 +303,10 @@ export default function Header() {
                     if (event.key === "Enter") {
                       submitSearch();
                     }
+
+                    if (event.key === "Escape") {
+                      clearSearch();
+                    }
                   }}
                   placeholder="Search coupons, stores..."
                   className="
@@ -262,6 +327,7 @@ export default function Header() {
                 {query && (
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={clearSearch}
                     className="
                       mr-2
@@ -285,15 +351,18 @@ export default function Header() {
                 )}
               </div>
 
-              {/* SEARCH RESULTS */}
+              {/* =================================================
+                  DESKTOP SEARCH RESULTS
+              ================================================= */}
 
-              {results.length > 0 && (
+              {query.trim() && (
                 <div
                   className="
                     absolute
                     left-0
                     right-0
                     top-[calc(100%+10px)]
+                    z-50
                     overflow-hidden
                     rounded-2xl
                     border
@@ -302,31 +371,201 @@ export default function Header() {
                     shadow-[0_20px_50px_rgba(15,23,42,0.14)]
                   "
                 >
-                  {results.map((item, index) => (
-                    <Link
-                      key={`${item.slug}-${index}`}
-                      href={`/coupons/${item.slug}`}
-                      onClick={clearSearch}
+                  {searchLoading && (
+                    <div
                       className="
-                        block
-                        border-b
-                        border-slate-100
-                        px-4
-                        py-3.5
-                        transition-colors
-                        last:border-b-0
-                        hover:bg-emerald-50/50
+                        px-5
+                        py-5
+                        text-sm
+                        font-medium
+                        text-slate-500
                       "
                     >
-                      <div className="truncate text-sm font-bold text-slate-900">
-                        {item.title}
-                      </div>
+                      Searching...
+                    </div>
+                  )}
 
-                      <div className="mt-1 truncate text-xs font-medium text-slate-500">
-                        {item.store_name || "Store"}
-                      </div>
-                    </Link>
-                  ))}
+                  {!searchLoading &&
+                    results.length > 0 &&
+                    results.map((item, index) => {
+                      const salePrice = formatPrice(item.sale_price);
+
+                      const originalPrice = formatPrice(item.original_price);
+
+                      const discount = formatDiscount(item.discount_value);
+
+                      const href = item.slug
+                        ? `/coupons/${encodeURIComponent(item.slug)}`
+                        : "#";
+
+                      return (
+                        <Link
+                          key={`${String(item.id)}-${index}`}
+                          href={href}
+                          onClick={() => clearSearch()}
+                          className="
+                              group
+                              flex
+                              min-h-[82px]
+                              items-center
+                              gap-3
+                              border-b
+                              border-slate-100
+                              px-4
+                              py-3
+                              transition-colors
+                              last:border-b-0
+                              hover:bg-slate-50
+                            "
+                        >
+                          {/* IMAGE */}
+
+                          <div
+                            className="
+                                relative
+                                flex
+                                h-14
+                                w-14
+                                shrink-0
+                                items-center
+                                justify-center
+                                overflow-hidden
+                                rounded-xl
+                                border
+                                border-slate-200
+                                bg-slate-50
+                              "
+                          >
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.title || "Product"}
+                                className="
+                                    h-full
+                                    w-full
+                                    object-contain
+                                    p-1
+                                    transition-transform
+                                    duration-200
+                                    group-hover:scale-105
+                                  "
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span className="text-xl">🏷️</span>
+                            )}
+                          </div>
+
+                          {/* PRODUCT INFO */}
+
+                          <div className="min-w-0 flex-1">
+                            <div
+                              className="
+                                  line-clamp-1
+                                  text-sm
+                                  font-black
+                                  leading-5
+                                  text-slate-900
+                                "
+                            >
+                              {item.title || "Special Deal"}
+                            </div>
+
+                            <div
+                              className="
+                                  mt-0.5
+                                  truncate
+                                  text-xs
+                                  font-medium
+                                  text-slate-500
+                                "
+                            >
+                              {item.store_name || "Store"}
+                            </div>
+
+                            <div
+                              className="
+                                  mt-1
+                                  flex
+                                  items-center
+                                  gap-2
+                                "
+                            >
+                              {salePrice && (
+                                <span
+                                  className="
+                                      text-sm
+                                      font-black
+                                      text-slate-950
+                                    "
+                                >
+                                  {salePrice}
+                                </span>
+                              )}
+
+                              {originalPrice && (
+                                <span
+                                  className="
+                                      text-[10px]
+                                      font-semibold
+                                      text-slate-400
+                                      line-through
+                                    "
+                                >
+                                  {originalPrice}
+                                </span>
+                              )}
+
+                              {discount && (
+                                <span
+                                  className="
+                                      rounded-full
+                                      bg-emerald-500
+                                      px-2
+                                      py-0.5
+                                      text-[9px]
+                                      font-black
+                                      text-white
+                                    "
+                                >
+                                  {discount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* ARROW */}
+
+                          <span
+                            className="
+                                shrink-0
+                                text-lg
+                                font-medium
+                                text-slate-300
+                                transition
+                                group-hover:translate-x-0.5
+                                group-hover:text-emerald-500
+                              "
+                          >
+                            →
+                          </span>
+                        </Link>
+                      );
+                    })}
+
+                  {!searchLoading && query.trim() && results.length === 0 && (
+                    <div
+                      className="
+                          px-5
+                          py-5
+                          text-sm
+                          font-medium
+                          text-slate-500
+                        "
+                    >
+                      No results
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -337,19 +576,19 @@ export default function Header() {
 
             <nav
               className="
-    flex
-    items-center
-    justify-self-end
-    whitespace-nowrap
-  "
+                flex
+                items-center
+                justify-self-end
+                whitespace-nowrap
+              "
             >
               <div
                 className="
-      flex
-      items-center
-      gap-1
-      lg:gap-2
-    "
+                  flex
+                  items-center
+                  gap-1
+                  lg:gap-2
+                "
               >
                 {mainNavigation.map((item) => {
                   const active = isNavigationActive(pathname, item.href);
@@ -359,39 +598,40 @@ export default function Header() {
                       key={item.href}
                       href={item.href}
                       className={`
-            relative
-            flex
-            min-h-[44px]
-            items-center
-            justify-center
-            rounded-xl
-            px-3
-            py-2.5
-            text-sm
-            font-bold
-            transition-all
-            duration-200
-            ${
-              active
-                ? "bg-emerald-50 text-emerald-700"
-                : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600"
-            }
-          `}
+                          relative
+                          flex
+                          min-h-[44px]
+                          items-center
+                          justify-center
+                          rounded-xl
+                          px-3
+                          py-2.5
+                          text-sm
+                          font-bold
+                          transition-all
+                          duration-200
+
+                          ${
+                            active
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600"
+                          }
+                        `}
                     >
                       {item.label}
 
                       {active && (
                         <span
                           className="
-                absolute
-                bottom-1
-                left-1/2
-                h-1
-                w-1
-                -translate-x-1/2
-                rounded-full
-                bg-emerald-500
-              "
+                              absolute
+                              bottom-1
+                              left-1/2
+                              h-1
+                              w-1
+                              -translate-x-1/2
+                              rounded-full
+                              bg-emerald-500
+                            "
                         />
                       )}
                     </Link>
@@ -402,15 +642,15 @@ export default function Header() {
 
                 <div
                   className="
-        ml-1
-        flex
-        min-h-[44px]
-        items-center
-        justify-center
-        border-l
-        border-slate-200
-        pl-3
-      "
+                    ml-1
+                    flex
+                    min-h-[44px]
+                    items-center
+                    justify-center
+                    border-l
+                    border-slate-200
+                    pl-3
+                  "
                 >
                   <SavedLink />
                 </div>
@@ -483,6 +723,7 @@ export default function Header() {
                 rounded-xl
                 text-xl
                 transition
+
                 ${
                   pathname === "/saved" || pathname.startsWith("/saved/")
                     ? "bg-emerald-50 text-emerald-600"
@@ -537,6 +778,7 @@ export default function Header() {
               border
               bg-slate-50/80
               transition-all
+
               ${
                 searchFocused
                   ? "border-emerald-500 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.08)]"
@@ -572,6 +814,10 @@ export default function Header() {
                 if (event.key === "Enter") {
                   submitSearch();
                 }
+
+                if (event.key === "Escape") {
+                  clearSearch();
+                }
               }}
               placeholder="Search coupons, stores..."
               className="
@@ -592,6 +838,7 @@ export default function Header() {
             {query && (
               <button
                 type="button"
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={clearSearch}
                 className="
                   mr-2
@@ -617,7 +864,7 @@ export default function Header() {
 
           {/* MOBILE SEARCH RESULTS */}
 
-          {results.length > 0 && (
+          {query.trim() && (
             <div className="relative z-50">
               <div
                 className="
@@ -633,31 +880,170 @@ export default function Header() {
                   shadow-[0_18px_45px_rgba(15,23,42,0.14)]
                 "
               >
-                {results.map((item, index) => (
-                  <Link
-                    key={`${item.slug}-${index}`}
-                    href={`/coupons/${item.slug}`}
-                    onClick={clearSearch}
+                {searchLoading && (
+                  <div
                     className="
-                      block
-                      border-b
-                      border-slate-100
                       px-4
-                      py-3.5
-                      transition-colors
-                      last:border-b-0
-                      hover:bg-emerald-50/50
+                      py-4
+                      text-sm
+                      font-medium
+                      text-slate-500
                     "
                   >
-                    <div className="truncate text-sm font-bold text-slate-900">
-                      {item.title}
-                    </div>
+                    Searching...
+                  </div>
+                )}
 
-                    <div className="mt-1 truncate text-xs font-medium text-slate-500">
-                      {item.store_name || "Store"}
-                    </div>
-                  </Link>
-                ))}
+                {!searchLoading &&
+                  results.length > 0 &&
+                  results.map((item, index) => {
+                    const salePrice = formatPrice(item.sale_price);
+
+                    const discount = formatDiscount(item.discount_value);
+
+                    const href = item.slug
+                      ? `/coupons/${encodeURIComponent(item.slug)}`
+                      : "#";
+
+                    return (
+                      <Link
+                        key={`${String(item.id)}-${index}`}
+                        href={href}
+                        onClick={clearSearch}
+                        className="
+                            group
+                            flex
+                            min-h-[72px]
+                            items-center
+                            gap-3
+                            border-b
+                            border-slate-100
+                            px-3
+                            py-2.5
+                            last:border-b-0
+                            hover:bg-slate-50
+                          "
+                      >
+                        {/* IMAGE */}
+
+                        <div
+                          className="
+                              flex
+                              h-12
+                              w-12
+                              shrink-0
+                              items-center
+                              justify-center
+                              overflow-hidden
+                              rounded-xl
+                              border
+                              border-slate-200
+                              bg-slate-50
+                            "
+                        >
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.title || "Product"}
+                              className="
+                                  h-full
+                                  w-full
+                                  object-contain
+                                  p-1
+                                "
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span className="text-lg">🏷️</span>
+                          )}
+                        </div>
+
+                        {/* INFO */}
+
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="
+                                line-clamp-1
+                                text-xs
+                                font-black
+                                text-slate-900
+                              "
+                          >
+                            {item.title || "Special Deal"}
+                          </div>
+
+                          <div
+                            className="
+                                mt-0.5
+                                truncate
+                                text-[10px]
+                                font-medium
+                                text-slate-500
+                              "
+                          >
+                            {item.store_name || "Store"}
+                          </div>
+
+                          <div className="mt-1 flex items-center gap-2">
+                            {salePrice && (
+                              <span
+                                className="
+                                    text-xs
+                                    font-black
+                                    text-slate-950
+                                  "
+                              >
+                                {salePrice}
+                              </span>
+                            )}
+
+                            {discount && (
+                              <span
+                                className="
+                                    rounded-full
+                                    bg-emerald-500
+                                    px-1.5
+                                    py-0.5
+                                    text-[8px]
+                                    font-black
+                                    text-white
+                                  "
+                              >
+                                {discount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ARROW */}
+
+                        <span
+                          className="
+                              shrink-0
+                              text-slate-300
+                              transition
+                              group-hover:text-emerald-500
+                            "
+                        >
+                          →
+                        </span>
+                      </Link>
+                    );
+                  })}
+
+                {!searchLoading && query.trim() && results.length === 0 && (
+                  <div
+                    className="
+                        px-4
+                        py-4
+                        text-sm
+                        font-medium
+                        text-slate-500
+                      "
+                  >
+                    No results
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -687,23 +1073,24 @@ export default function Header() {
                       href={item.href}
                       onClick={closeMobileMenu}
                       className={`
-                        flex
-                        min-h-[46px]
-                        items-center
-                        justify-center
-                        rounded-xl
-                        border
-                        px-4
-                        py-3
-                        text-sm
-                        font-bold
-                        transition
-                        ${
-                          active
-                            ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                            : "border-slate-100 bg-slate-50 text-slate-800 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-700"
-                        }
-                      `}
+                          flex
+                          min-h-[46px]
+                          items-center
+                          justify-center
+                          rounded-xl
+                          border
+                          px-4
+                          py-3
+                          text-sm
+                          font-bold
+                          transition
+
+                          ${
+                            active
+                              ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                              : "border-slate-100 bg-slate-50 text-slate-800 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-700"
+                          }
+                        `}
                     >
                       {item.label}
                     </Link>
@@ -727,6 +1114,7 @@ export default function Header() {
                     text-sm
                     font-bold
                     transition
+
                     ${
                       pathname === "/saved" || pathname.startsWith("/saved/")
                         ? "border-emerald-100 bg-emerald-50 text-emerald-700"
